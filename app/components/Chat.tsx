@@ -15,6 +15,20 @@ export default function Chat() {
 
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  useEffect(() => {
+  const savedMessages = localStorage.getItem("vibe-messages");
+
+  if (savedMessages) {
+    setMessages(JSON.parse(savedMessages));
+  }
+}, []);
+
+useEffect(() => {
+  localStorage.setItem(
+    "vibe-messages",
+    JSON.stringify(messages)
+  );
+}, [messages]);
 function startListening() {
   const SpeechRecognition =
     (window as any).SpeechRecognition ||
@@ -80,8 +94,14 @@ function startListening() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: userMessage,
-        }),
+  messages: [
+    ...messages,
+    {
+      role: "user",
+      text: userMessage,
+    },
+  ],
+}),
       });
 
       const data = await response.json();
