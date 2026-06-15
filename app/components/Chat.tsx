@@ -210,12 +210,21 @@ console.log(voices.map(v => v.name));
   }
 
   return (
-    <main className="max-w-3xl mx-auto p-6">
-      <h1 className="text-4xl font-bold mb-6">
-        Vibe AI
-      </h1>
+    <main className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex justify-center p-6">
+      <div className="w-full max-w-4xl">
+      <div className="flex items-center gap-3 mb-6">
+  <img
+    src="/mine_heart_nobg.png"
+    alt="Vibe"
+    className="w-12 h-12"
+  />
 
-      <div className="border rounded-lg p-4 min-h-[400px] mb-4">
+  <h1 className="text-4xl font-bold">
+    Vibe AI
+  </h1>
+</div>
+
+      <div className="bg-white/90 backdrop-blur border border-pink-100 rounded-3xl shadow-xl p-6 min-h-[500px] mb-4">
         {messages.length === 0 && (
           <p>Start chatting...</p>
         )}
@@ -271,6 +280,7 @@ console.log(voices.map(v => v.name));
 >
   Send
 </button>
+      </div>
       </div>
     </main>
   );
