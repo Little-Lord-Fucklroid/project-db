@@ -146,7 +146,7 @@ console.log(voices.map(v => v.name));
 
   // make it sound more natural
   utterance.rate = 0.9;   // slower = more human
-  utterance.pitch = 1.25; // softer female tone
+  utterance.pitch = 1.15; // softer female tone
   utterance.volume = 1;
 
   window.speechSynthesis.speak(utterance);
