@@ -12,6 +12,7 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [incognito, setIncognito] = useState(false);
 
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -24,11 +25,47 @@ export default function Chat() {
 }, []);
 
 useEffect(() => {
-  localStorage.setItem(
-    "vibe-messages",
-    JSON.stringify(messages)
-  );
-}, [messages]);
+  if (!incognito) {
+    localStorage.setItem(
+      "vibe-messages",
+      JSON.stringify(messages)
+    );
+  }
+}, [messages, incognito]);
+function toggleIncognito() {
+  const savedPin = localStorage.getItem("vibe-incognito-pin");
+
+  if (!incognito) {
+    if (!savedPin) {
+      const newPin = prompt("Create a 4-digit incognito PIN:");
+
+      if (!newPin || !/^\d{4}$/.test(newPin)) {
+        alert("PIN must be exactly 4 numbers.");
+        return;
+      }
+
+      localStorage.setItem("vibe-incognito-pin", newPin);
+      setMessages([]);
+      setIncognito(true);
+      alert("Incognito mode created and unlocked.");
+      return;
+    }
+
+    const enteredPin = prompt("Enter your incognito PIN:");
+
+    if (enteredPin !== savedPin) {
+      alert("Wrong PIN.");
+      return;
+    }
+
+    setMessages([]);
+    setIncognito(true);
+    return;
+  }
+
+  setMessages([]);
+  setIncognito(false);
+}
 function startListening() {
   const SpeechRecognition =
     (window as any).SpeechRecognition ||
@@ -219,6 +256,13 @@ console.log(voices.map(v => v.name));
   className="border px-4 py-2 rounded"
 >
   {listening ? "🎤 Listening..." : "🎤"}
+</button>
+
+<button
+  onClick={toggleIncognito}
+  className="border px-4 py-2 rounded"
+>
+  {incognito ? "Exit Incognito" : "Incognito"}
 </button>
 
 <button
