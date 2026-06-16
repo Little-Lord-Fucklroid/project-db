@@ -97,15 +97,7 @@ function startListening() {
   recognition.onresult = (event: any) => {
   const transcript = event.results[0][0].transcript;
 
-  setMessage(transcript);
-
-  setTimeout(() => {
-    const sendButton = document.querySelector(
-      'button:last-of-type'
-    ) as HTMLButtonElement | null;
-
-    sendButton?.click();
-  }, 300);
+ setMessage(transcript);
 };
 
   recognition.start();
@@ -147,7 +139,6 @@ function startListening() {
 console.log("VOICE TEST:", data.reply);
 console.log("AI reply:", data.reply);
 if (data.reply) {
-  if (data.reply) {
   // stop any previous voice
   window.speechSynthesis.cancel();
 
@@ -190,7 +181,7 @@ console.log(voices.map(v => v.name));
 
   window.speechSynthesis.speak(utterance);
 }
-}
+
       setMessages((prev) => [
         ...prev,
         {

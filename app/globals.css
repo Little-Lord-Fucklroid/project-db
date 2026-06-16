@@ -52,8 +52,18 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
+.btn-mine {
+  background: linear-gradient(
+    135deg,
+    #88ce8d 0%,
+    #acf4af 100%
+  );
+  color: #115925;
+  border: none;
+  box-shadow: 0 8px 30px rgba(136, 206, 141, 0.35);
+}
 
-.btn-mine {.btn-primary {
+.btn-primary {
   background: linear-gradient(
     135deg,
     #88ce8d 0%,
@@ -69,11 +79,7 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 14px 35px rgba(136, 206, 141, 0.45);
 }
-  background: linear-gradient(135deg, #88ce8d 0%, #acf4af 100%);
-  color: #115925;
-  border: none;
-  box-shadow: 0 8px 30px rgba(136, 206, 141, 0.35);
-}
+
 
 .shimmer-heart {
   animation: shimmer-pulse 4s ease-in-out infinite;
