@@ -6,13 +6,24 @@ export async function POST(req: Request) {
     const body = await req.json();
 
 const chatHistory = body.messages || [];
+const memories = body.memories || "";
+
+const memoryPrompt = memories
+  ? `
+
+Known memories about the user:
+${memories}
+
+Use these memories naturally when relevant. Do not mention that you are reading a memory list.
+`
+  : "";
 
 const completion = await openai.chat.completions.create({
   model: "llama-3.3-70b-versatile",
   messages: [
     {
       role: "system",
-      content: SYSTEM_PROMPT,
+      content: SYSTEM_PROMPT + memoryPrompt,
     },
     ...chatHistory.map((msg: any) => ({
       role: msg.role === "ai" ? "assistant" : "user",

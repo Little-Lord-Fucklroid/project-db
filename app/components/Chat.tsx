@@ -16,6 +16,12 @@ import {
   saveMessages,
 } from "@/lib/chatStorage"; 
 
+import {
+  addMemory,
+  loadMemories,
+  memoriesToPromptText,
+} from "@/lib/memory";
+
 import { speakText } from "@/lib/voice";
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 
@@ -104,6 +110,31 @@ function startListening() {
 
     const userMessage = message;
 
+const memoryPatterns = [
+  "my name is",
+  "i am",
+  "i'm",
+  "my favorite",
+  "i like",
+  "i love",
+  "i hate",
+  "i have",
+  "my dog",
+  "my cat",
+  "my birthday",
+  "remember that",
+];
+
+const lowerMessage = userMessage.toLowerCase();
+
+if (
+  memoryPatterns.some((pattern) =>
+    lowerMessage.includes(pattern)
+  )
+) {
+  addMemory(userMessage);
+}
+
     setMessages((prev) => [
       ...prev,
       {
@@ -122,6 +153,7 @@ function startListening() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+  memories: memoriesToPromptText(loadMemories()),
   messages: [
     ...messages,
     {
