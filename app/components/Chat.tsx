@@ -16,6 +16,8 @@ import {
   saveMessages,
 } from "@/lib/chatStorage"; 
 
+import { speakText } from "@/lib/voice";
+
 type Message = {
   role: "user" | "ai";
   text: string;
@@ -146,47 +148,7 @@ function startListening() {
 console.log("VOICE TEST:", data.reply);
 console.log("AI reply:", data.reply);
 if (data.reply) {
-  // stop any previous voice
-  window.speechSynthesis.cancel();
-
-const speechText = data.reply
-  .replace(/\bMmmmm+\b/gi, "mmm...")
-  .replace(/\bHmmmm+\b/gi, "hmm...");
-
-const utterance = new SpeechSynthesisUtterance(speechText);
-  await new Promise<void>((resolve) => {
-  const voices = window.speechSynthesis.getVoices();
-
-  if (voices.length) {
-    resolve();
-  } else {
-    window.speechSynthesis.onvoiceschanged = () => resolve();
-  }
-});
-
-const voices = window.speechSynthesis.getVoices();
-console.log(voices.map(v => v.name));
-  console.log("AVAILABLE VOICES:", voices);
-
-  // try to pick a female / natural voice
-  const preferredVoice =
-    voices.find(v =>
-      v.name.toLowerCase().includes("aria") ||
-      v.name.toLowerCase().includes("jenny") ||
-      v.name.toLowerCase().includes("microsoft") ||
-      v.name.toLowerCase().includes("female")
-    ) || voices.find(v => v.lang.includes("en"));
-
-  if (preferredVoice) {
-    utterance.voice = preferredVoice;
-  }
-
-  // make it sound more natural
-  utterance.rate = 0.9;   // slower = more human
-  utterance.pitch = 1.15; // softer female tone
-  utterance.volume = 1;
-
-  window.speechSynthesis.speak(utterance);
+  await speakText(data.reply);
 }
 
       setMessages((prev) => [
