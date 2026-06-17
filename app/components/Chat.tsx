@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import SignInScreen from "./screens/SignInScreen";
 import VoiceScreen from "./screens/VoiceScreen";
+import MessageBubble from "./chat/MessageBubble";
+import ChatHeader from "./chat/ChatHeader";
 
 type Message = {
   role: "user" | "ai";
@@ -237,28 +239,7 @@ if (screen === "signin") {
   <div className="light-ray opacity-20" />
 
       <div className="w-full max-w-4xl">
-      <div
-  className="sticky top-4 z-50 glass-card rounded-3xl px-5 py-4 mb-6 flex items-center justify-between"
-  style={{
-    boxShadow: "0 12px 40px rgba(40, 107, 53, 0.10)",
-  }}
->
-  <img
-  src="/mine_heart_nobg.png"
-  alt="Vibe"
-  className="w-11 h-11 shimmer-heart"
-/>
-
-  <h1
-  className="text-2xl font-bold"
-  style={{ color: "#286b35" }}
->
-    Vibe AI
-  </h1>
-  <div className="text-sm text-gray-500">
-  Online ✨
-</div>
-</div>
+     <ChatHeader />
 
       <div
   className="glass-card rounded-[32px] p-6 min-h-[75vh] mb-4"
@@ -269,28 +250,12 @@ if (screen === "signin") {
         {messages.length === 0 && (
           <p>Start chatting...</p>
         )}
-
-        {messages.map((msg, index) => (
-  <div
+{messages.map((msg, index) => (
+  <MessageBubble
     key={index}
-    className={`mb-4 flex ${
-      msg.role === "user" ? "justify-end" : "justify-start"
-    }`}
-  >
-    <div
-      className={`max-w-[75%] rounded-3xl px-5 py-3 shadow-sm ${
-        msg.role === "user"
-          ? "bg-pink-500 text-white rounded-br-md"
-          : "bg-pink-50 text-gray-900 border border-pink-100 rounded-bl-md"
-      }`}
-    >
-      <p className="text-xs font-semibold opacity-70 mb-1">
-        {msg.role === "user" ? "You" : "Vibe"}
-      </p>
-
-      <p className="leading-relaxed">{msg.text}</p>
-    </div>
-  </div>
+    role={msg.role}
+    text={msg.text}
+  />
 ))}
       </div>
 <div className="sticky bottom-4 z-50 bg-white/90 backdrop-blur border border-pink-100 rounded-3xl shadow-lg p-3 flex gap-2">
