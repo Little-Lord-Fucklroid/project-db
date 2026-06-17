@@ -6,6 +6,15 @@ import SignInScreen from "./screens/SignInScreen";
 import VoiceScreen from "./screens/VoiceScreen";
 import MessageBubble from "./chat/MessageBubble";
 import ChatHeader from "./chat/ChatHeader";
+import ChatInput from "./chat/ChatInput";
+
+import {
+  getIncognitoPin,
+  isValidPin,
+  loadSavedMessages,
+  saveIncognitoPin,
+  saveMessages,
+} from "@/lib/chatStorage"; 
 
 type Message = {
   role: "user" | "ai";
@@ -23,35 +32,28 @@ export default function Chat() {
   const [listening, setListening] = useState(false);
   const [voiceScreen, setVoiceScreen] = useState(false);
   const recognitionRef = useRef<any>(null);
-  useEffect(() => {
-  const savedMessages = localStorage.getItem("vibe-messages");
-
-  if (savedMessages) {
-    setMessages(JSON.parse(savedMessages));
-  }
+ useEffect(() => {
+  setMessages(loadSavedMessages());
 }, []);
 
 useEffect(() => {
   if (!incognito) {
-    localStorage.setItem(
-      "vibe-messages",
-      JSON.stringify(messages)
-    );
+    saveMessages(messages);
   }
 }, [messages, incognito]);
 function toggleIncognito() {
-  const savedPin = localStorage.getItem("vibe-incognito-pin");
+  const savedPin = getIncognitoPin();
 
   if (!incognito) {
     if (!savedPin) {
       const newPin = prompt("Create a 4-digit incognito PIN:");
 
-      if (!newPin || !/^\d{4}$/.test(newPin)) {
+      if (!newPin || !isValidPin(newPin)) {
         alert("PIN must be exactly 4 numbers.");
         return;
       }
 
-      localStorage.setItem("vibe-incognito-pin", newPin);
+      saveIncognitoPin(newPin);
       setMessages([]);
       setIncognito(true);
       alert("Incognito mode created and unlocked.");
@@ -258,47 +260,16 @@ if (screen === "signin") {
   />
 ))}
       </div>
-<div className="sticky bottom-4 z-50 bg-white/90 backdrop-blur border border-pink-100 rounded-3xl shadow-lg p-3 flex gap-2">
-        <input
-         className="bg-pink-50 text-black placeholder:text-gray-500 border border-pink-100 p-3 flex-1 rounded-2xl outline-none focus:ring-2 focus:ring-pink-200"
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) =>
-            setMessage(e.target.value)
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              sendMessage();
-            }
-          }}
-        />
-
-       <button
-  onClick={() => setVoiceScreen(true)}
-  className={`px-4 py-3 rounded-2xl shadow-sm transition ${
-    listening
-      ? "bg-pink-500 text-white"
-      : "bg-white border border-pink-100 text-pink-600 hover:bg-pink-50"
-  }`}
->
-  {listening ? "Listening..." : "🎤"}
-</button>
-
-<button
-  onClick={toggleIncognito}
-  className="bg-white text-black border border-gray-300 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50"
->
-  {incognito ? "🌙 Exit Incognito" : "🌙 Incognito"}
-</button>
-
-<button
-  onClick={sendMessage}
-  className="bg-pink-500 text-white px-6 py-3 rounded-2xl shadow-md hover:bg-pink-600 transition disabled:opacity-50"
-  disabled={loading}
->
-  {loading ? "..." : "Send"}
-</button>
-      </div>
+<ChatInput
+  message={message}
+  loading={loading}
+  listening={listening}
+  incognito={incognito}
+  onMessageChange={setMessage}
+  onSend={sendMessage}
+  onOpenVoiceScreen={() => setVoiceScreen(true)}
+  onToggleIncognito={toggleIncognito}
+/>
       </div>
     </main>
   );
