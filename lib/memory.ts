@@ -54,3 +54,12 @@ export function memoriesToPromptText(memories: Memory[]) {
     .map((memory) => `- ${memory.text}`)
     .join("\n");
 }
+export function deleteMemory(id: string) {
+  const memories = loadMemories();
+  const updatedMemories = memories.filter(
+    (memory) => memory.id !== id
+  );
+
+  saveMemories(updatedMemories);
+  return updatedMemories;
+}

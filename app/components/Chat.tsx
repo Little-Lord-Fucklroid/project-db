@@ -7,6 +7,7 @@ import VoiceScreen from "./screens/VoiceScreen";
 import MessageBubble from "./chat/MessageBubble";
 import ChatHeader from "./chat/ChatHeader";
 import ChatInput from "./chat/ChatInput";
+import MemoryScreen from "./screens/MemoryScreen";
 
 import {
   getIncognitoPin,
@@ -18,8 +19,11 @@ import {
 
 import {
   addMemory,
+  clearMemories,
+  deleteMemory,
   loadMemories,
   memoriesToPromptText,
+  type Memory,
 } from "@/lib/memory";
 
 import { speakText } from "@/lib/voice";
@@ -33,16 +37,21 @@ type Message = {
 export default function Chat() {
   
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [screen, setScreen] = useState<"start" | "signin" | "chat">("start");
-  const [incognito, setIncognito] = useState(false);
+const [messages, setMessages] = useState<Message[]>([]);
+const [memories, setMemories] = useState<Memory[]>([]);
+const [loading, setLoading] = useState(false);
 
-  const [listening, setListening] = useState(false);
-  const [voiceScreen, setVoiceScreen] = useState(false);
-  const recognitionRef = useRef<any>(null);
+const [screen, setScreen] = useState<
+  "start" | "signin" | "chat" | "memory"
+>("start");
+
+const [incognito, setIncognito] = useState(false);
+const [listening, setListening] = useState(false);
+const [voiceScreen, setVoiceScreen] = useState(false);
+const recognitionRef = useRef<any>(null);
  useEffect(() => {
   setMessages(loadSavedMessages());
+  setMemories(loadMemories());
 }, []);
 
 useEffect(() => {
@@ -132,7 +141,12 @@ if (
     lowerMessage.includes(pattern)
   )
 ) {
-  addMemory(userMessage);
+  const newMemory = addMemory(userMessage);
+
+  setMemories((prev) => [
+    ...prev,
+    newMemory,
+  ]);
 }
 
     setMessages((prev) => [
@@ -214,6 +228,23 @@ if (screen === "signin") {
     />
   );
 }
+if (screen === "memory") {
+  return (
+    <MemoryScreen
+      memories={memories}
+      onBack={() => setScreen("chat")}
+      onDelete={(id) => {
+        setMemories(deleteMemory(id));
+      }}
+      onClearAll={() => {
+  clearMemories();
+  setMemories([]);
+  setMessages([]);
+  saveMessages([]);
+}}
+    />
+  );
+}
   return (
     <main
  className="min-h-screen flex justify-center p-5 relative"
@@ -223,7 +254,9 @@ if (screen === "signin") {
   <div className="light-ray opacity-20" />
 
       <div className="w-full max-w-4xl">
-     <ChatHeader />
+    <ChatHeader
+  onOpenMemory={() => setScreen("memory")}
+/>
 
       <div
   className="glass-card rounded-[32px] p-6 min-h-[75vh] mb-4"
