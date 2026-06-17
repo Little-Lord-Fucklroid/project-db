@@ -17,6 +17,7 @@ import {
 } from "@/lib/chatStorage"; 
 
 import { speakText } from "@/lib/voice";
+import { startSpeechRecognition } from "@/lib/speechRecognition";
 
 type Message = {
   role: "user" | "ai";
@@ -78,38 +79,25 @@ function toggleIncognito() {
   setIncognito(false);
 }
 function startListening() {
-  const SpeechRecognition =
-    (window as any).SpeechRecognition ||
-    (window as any).webkitSpeechRecognition;
+  recognitionRef.current = startSpeechRecognition({
+    onStart: () => {
+      setListening(true);
+    },
 
-  if (!SpeechRecognition) {
-    alert("Speech recognition is not supported in this browser.");
-    return;
-  }
+    onEnd: () => {
+      setListening(false);
+    },
 
-  const recognition = new SpeechRecognition();
+    onResult: (transcript) => {
+      setMessage(transcript);
+    },
 
-  recognition.lang = "en-US";
-  recognition.continuous = false;
-  recognition.interimResults = false;
-
-  recognitionRef.current = recognition;
-
-  recognition.onstart = () => {
-    setListening(true);
-  };
-
-  recognition.onend = () => {
-    setListening(false);
-  };
-
-  recognition.onresult = (event: any) => {
-  const transcript = event.results[0][0].transcript;
-
- setMessage(transcript);
-};
-
-  recognition.start();
+    onUnsupported: () => {
+      alert(
+        "Speech recognition is not supported in this browser."
+      );
+    },
+  });
 }
   async function sendMessage() {
     if (!message.trim() || loading) return;
