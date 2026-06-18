@@ -96,7 +96,7 @@ function toggleIncognito() {
     return;
   }
 
-  setMessages([]);
+  setMessages(loadSavedMessages());
   setIncognito(false);
 }
 function startListening() {
