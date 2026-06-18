@@ -4,14 +4,16 @@ type MemoryScreenProps = {
   memories: Memory[];
   onBack: () => void;
   onDelete: (id: string) => void;
-  onClearAll: () => void;
+  onClearMemories: () => void;
+  onClearChatHistory: () => void;
 };
 
 export default function MemoryScreen({
   memories,
   onBack,
   onDelete,
-  onClearAll,
+  onClearMemories,
+  onClearChatHistory,
 }: MemoryScreenProps) {
   return (
     <main
@@ -101,8 +103,8 @@ export default function MemoryScreen({
         );
 
         if (confirmed) {
-          onClearAll();
-        }
+  onClearMemories();
+}
       }}
       className="w-full rounded-2xl py-4 font-bold"
       style={{
@@ -121,8 +123,8 @@ export default function MemoryScreen({
       );
 
       if (confirmed) {
-        onClearAll();
-      }
+  onClearChatHistory();
+}
     }}
     className="w-full rounded-2xl py-4 font-bold"
     style={{

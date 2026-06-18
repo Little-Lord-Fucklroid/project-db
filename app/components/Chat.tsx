@@ -293,14 +293,27 @@ if (screen === "memory") {
       memories={memories}
       onBack={() => setScreen("chat")}
       onDelete={(id) => {
-        setMemories(deleteMemory(id));
-      }}
-      onClearAll={() => {
-  clearMemories();
-  setMemories([]);
-  setMessages([]);
-  saveMessages([]);
+  const result = deleteMemory(id);
+
+  setMemories(result.updatedMemories);
+
+  const shouldClearChat = confirm(
+    "Memory deleted. This fact may still appear in your chat history. Clear chat history too?"
+  );
+
+  if (shouldClearChat) {
+    setMessages([]);
+    saveMessages([]);
+  }
 }}
+      onClearMemories={() => {
+        clearMemories();
+        setMemories([]);
+      }}
+      onClearChatHistory={() => {
+        setMessages([]);
+        saveMessages([]);
+      }}
     />
   );
 }

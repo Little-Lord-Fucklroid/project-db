@@ -16,10 +16,63 @@ const MEMORY_PATTERNS = [
   "i hate",
   "i have",
   "my dog",
+  "my dog's",
+  "my dogs",
   "my cat",
+  "my cat's",
+  "my cats",
   "my birthday",
   "remember that",
 ];
+
+function capitalizeName(name: string) {
+  return name
+    .trim()
+    .replace(/[.!?]+$/, "")
+    .split(" ")
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
+function normalizeMemoryText(text: string) {
+  const cleanText = text.trim();
+
+  const dogPatterns = [
+    /my dog's name is (.+)/i,
+    /my dogs name is (.+)/i,
+    /my dog is (.+)/i,
+    /(.+) is my dog/i,
+  ];
+
+  for (const pattern of dogPatterns) {
+    const match = cleanText.match(pattern);
+
+    if (match?.[1]) {
+      return `My dog's name is ${capitalizeName(match[1])}`;
+    }
+  }
+
+  const catPatterns = [
+    /my cat's name is (.+)/i,
+    /my cats name is (.+)/i,
+    /my cat is (.+)/i,
+    /(.+) is my cat/i,
+  ];
+
+  for (const pattern of catPatterns) {
+    const match = cleanText.match(pattern);
+
+    if (match?.[1]) {
+      return `My cat's name is ${capitalizeName(match[1])}`;
+    }
+  }
+
+  return cleanText;
+}
 
 export function loadMemories(): Memory[] {
   try {
@@ -52,11 +105,12 @@ export function shouldSaveMemory(text: string) {
 
 export function addMemory(text: string) {
   const memories = loadMemories();
-  const cleanText = text.trim();
+  const cleanText = normalizeMemoryText(text);
 
   const alreadyExists = memories.some(
     (memory) =>
-      memory.text.toLowerCase() === cleanText.toLowerCase()
+      normalizeMemoryText(memory.text).toLowerCase() ===
+      cleanText.toLowerCase()
   );
 
   if (alreadyExists) {
@@ -76,12 +130,21 @@ export function addMemory(text: string) {
 
 export function deleteMemory(id: string) {
   const memories = loadMemories();
+
+  const deletedMemory = memories.find(
+    (memory) => memory.id === id
+  );
+
   const updatedMemories = memories.filter(
     (memory) => memory.id !== id
   );
 
   saveMemories(updatedMemories);
-  return updatedMemories;
+
+  return {
+    updatedMemories,
+    deletedMemory,
+  };
 }
 
 export function clearMemories() {
