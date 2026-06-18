@@ -149,10 +149,12 @@ function startListening() {
   ) {
     const newMemory = addMemory(userMessage);
 
-    setMemories((prev) => [
-      ...prev,
-      newMemory,
-    ]);
+if (newMemory) {
+  setMemories((prev) => [
+    ...prev,
+    newMemory,
+  ]);
+}
   }
 
   setMessages((prev) => [
@@ -313,6 +315,7 @@ if (screen === "memory") {
       <div className="w-full max-w-4xl">
     <ChatHeader
   onOpenMemory={() => setScreen("memory")}
+  memoryCount={memories.length}
 />
 
       <div

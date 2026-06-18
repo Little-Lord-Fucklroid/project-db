@@ -1,9 +1,11 @@
 type ChatHeaderProps = {
   onOpenMemory: () => void;
+  memoryCount: number;
 };
 
 export default function ChatHeader({
   onOpenMemory,
+  memoryCount,
 }: ChatHeaderProps) {
   return (
     <div
@@ -26,16 +28,16 @@ export default function ChatHeader({
       </h1>
 
       <button
-        onClick={onOpenMemory}
-        className="px-3 py-2 rounded-2xl text-sm font-semibold transition"
-        style={{
-          background: "rgba(255,255,255,0.6)",
-          border: "1px solid rgba(255,255,255,0.7)",
-          color: "#286b35",
-        }}
-      >
-        🧠 Memory
-      </button>
+  onClick={onOpenMemory}
+  className="px-3 py-2 rounded-2xl text-sm font-semibold transition"
+  style={{
+    background: "rgba(255,255,255,0.6)",
+    border: "1px solid rgba(255,255,255,0.7)",
+    color: "#286b35",
+  }}
+>
+  🧠 {memoryCount} {memoryCount === 1 ? "Memory" : "Memories"}
+</button>
     </div>
   );
 }
