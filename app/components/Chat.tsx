@@ -142,12 +142,7 @@ function startListening() {
 
   const lowerMessage = userMessage.toLowerCase();
 
-  if (
-    memoryPatterns.some((pattern) =>
-      lowerMessage.includes(pattern)
-    )
-  ) {
-    const newMemory = addMemory(userMessage);
+ const newMemory = addMemory(userMessage);
 
 if (newMemory) {
   setMemories((prev) => [
@@ -155,7 +150,6 @@ if (newMemory) {
     newMemory,
   ]);
 }
-  }
 
   setMessages((prev) => [
     ...prev,
