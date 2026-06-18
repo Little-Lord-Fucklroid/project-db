@@ -1,12 +1,4 @@
-export async function speakText(text: string) {
-  window.speechSynthesis.cancel();
-
-  const speechText = text
-    .replace(/\bMmmmm+\b/gi, "mmm...")
-    .replace(/\bHmmmm+\b/gi, "hmm...");
-
-  const utterance = new SpeechSynthesisUtterance(speechText);
-
+export async function preloadVoices() {
   await new Promise<void>((resolve) => {
     const voices = window.speechSynthesis.getVoices();
 
@@ -16,7 +8,18 @@ export async function speakText(text: string) {
       window.speechSynthesis.onvoiceschanged = () => resolve();
     }
   });
+}
 
+export async function speakText(text: string) {
+  window.speechSynthesis.cancel();
+
+  const speechText = text
+    .replace(/\bMmmmm+\b/gi, "mmm...")
+    .replace(/\bHmmmm+\b/gi, "hmm...");
+
+  await preloadVoices();
+
+  const utterance = new SpeechSynthesisUtterance(speechText);
   const voices = window.speechSynthesis.getVoices();
 
   const preferredVoice =

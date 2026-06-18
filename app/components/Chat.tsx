@@ -26,7 +26,7 @@ import {
   type Memory,
 } from "@/lib/memory";
 
-import { speakText } from "@/lib/voice";
+import { preloadVoices, speakText } from "@/lib/voice";
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 
 type Message = {
@@ -49,10 +49,16 @@ const [incognito, setIncognito] = useState(false);
 const [listening, setListening] = useState(false);
 const [voiceScreen, setVoiceScreen] = useState(false);
 const recognitionRef = useRef<any>(null);
+const messagesEndRef = useRef<HTMLDivElement>(null);
  useEffect(() => {
   setMessages(loadSavedMessages());
   setMemories(loadMemories());
 }, []);
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages, loading]);
 
 useEffect(() => {
   if (!incognito) {
@@ -115,95 +121,146 @@ function startListening() {
   });
 }
   async function sendMessage() {
-    if (!message.trim() || loading) return;
+  if (!message.trim() || loading) return;
 
-    const userMessage = message;
+  const userMessage = message;
 
-const memoryPatterns = [
-  "my name is",
-  "i am",
-  "i'm",
-  "my favorite",
-  "i like",
-  "i love",
-  "i hate",
-  "i have",
-  "my dog",
-  "my cat",
-  "my birthday",
-  "remember that",
-];
+  const memoryPatterns = [
+    "my name is",
+    "i am",
+    "i'm",
+    "my favorite",
+    "i like",
+    "i love",
+    "i hate",
+    "i have",
+    "my dog",
+    "my cat",
+    "my birthday",
+    "remember that",
+  ];
 
-const lowerMessage = userMessage.toLowerCase();
+  const lowerMessage = userMessage.toLowerCase();
 
-if (
-  memoryPatterns.some((pattern) =>
-    lowerMessage.includes(pattern)
-  )
-) {
-  const newMemory = addMemory(userMessage);
+  if (
+    memoryPatterns.some((pattern) =>
+      lowerMessage.includes(pattern)
+    )
+  ) {
+    const newMemory = addMemory(userMessage);
 
-  setMemories((prev) => [
-    ...prev,
-    newMemory,
-  ]);
-}
-
-    setMessages((prev) => [
+    setMemories((prev) => [
       ...prev,
-      {
-        role: "user",
-        text: userMessage,
-      },
+      newMemory,
     ]);
+  }
 
-    setMessage("");
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-  memories: memoriesToPromptText(loadMemories()),
-  messages: [
-    ...messages,
+  setMessages((prev) => [
+    ...prev,
     {
       role: "user",
       text: userMessage,
     },
-  ],
-}),
-      });
+  ]);
 
-      const data = await response.json();
-console.log("VOICE TEST:", data.reply);
-console.log("AI reply:", data.reply);
-if (data.reply) {
-  await speakText(data.reply);
-}
+  setMessage("");
+  setLoading(true);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: data.reply || "No response received.",
-        },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "Something went wrong.",
-        },
-      ]);
-    }
+  const voiceReadyPromise = preloadVoices();
+
+  const minimumThinkingPromise = new Promise<void>((resolve) => {
+    setTimeout(resolve, 500);
+  });
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        memories: memoriesToPromptText(loadMemories()),
+        messages: [
+          ...messages,
+          {
+            role: "user",
+            text: userMessage,
+          },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log("VOICE TEST:", data.reply);
+    console.log("AI reply:", data.reply);
+
+    const reply = data.reply || "No response received.";
+
+    await Promise.all([
+      voiceReadyPromise,
+      minimumThinkingPromise,
+    ]);
 
     setLoading(false);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "",
+      },
+    ]);
+
+    speakText(reply);
+
+    const duration =
+      reply.length <= 80
+        ? 1000
+        : reply.length <= 180
+        ? 3000
+        : 5000;
+
+    const intervalTime = Math.max(
+      15,
+      Math.floor(duration / reply.length)
+    );
+
+    let index = 0;
+
+    const typingInterval = window.setInterval(() => {
+      index++;
+
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastMessage = updated[updated.length - 1];
+
+        if (lastMessage?.role === "ai") {
+          updated[updated.length - 1] = {
+            ...lastMessage,
+            text: reply.slice(0, index),
+          };
+        }
+
+        return updated;
+      });
+
+      if (index >= reply.length) {
+        window.clearInterval(typingInterval);
+      }
+    }, intervalTime);
+  } catch (error) {
+    setLoading(false);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "Something went wrong.",
+      },
+    ]);
   }
+}
  if (voiceScreen) {
   return (
     <VoiceScreen
@@ -274,6 +331,15 @@ if (screen === "memory") {
     text={msg.text}
   />
 ))}
+
+{loading && (
+  <MessageBubble
+    role="ai"
+    text="✨ Vibe is thinking..."
+  />
+)}
+
+<div ref={messagesEndRef} />
       </div>
 <ChatInput
   message={message}
