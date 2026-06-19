@@ -1,3 +1,11 @@
+"use client";
+
+import { useState } from "react";
+import {
+  signInWithEmail,
+  signUpWithEmail,
+} from "@/lib/supabaseAuth";
+
 type SignInScreenProps = {
   onBack: () => void;
   onSignIn: () => void;
@@ -9,6 +17,44 @@ export default function SignInScreen({
   onSignIn,
   onGuest,
 }: SignInScreenProps) {
+  const [mode, setMode] = useState<"signin" | "signup">(
+    "signin"
+  );
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function handleAuth() {
+    if (!email.trim() || !password.trim()) {
+      setErrorMessage("Enter your email and password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      if (mode === "signup") {
+        await signUpWithEmail(email, password);
+      } else {
+        await signInWithEmail(email, password);
+      }
+
+      onSignIn();
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Something went wrong.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main
       className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden px-6"
@@ -41,7 +87,9 @@ export default function SignInScreen({
               marginBottom: "10px",
             }}
           >
-            Welcome back
+            {mode === "signin"
+              ? "Welcome back"
+              : "Create account"}
           </h1>
 
           <p
@@ -51,7 +99,9 @@ export default function SignInScreen({
               opacity: 0.75,
             }}
           >
-            Sign in to continue your safe space.
+            {mode === "signin"
+              ? "Sign in to continue your safe space."
+              : "Create an account to save your chats and memories."}
           </p>
         </div>
 
@@ -64,16 +114,42 @@ export default function SignInScreen({
           <input
             type="email"
             placeholder="Email"
+            value={email}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
             className="w-full rounded-2xl px-4 py-4 outline-none border border-white/60 bg-white/70 text-black placeholder:text-gray-500"
           />
 
           <input
             type="password"
             placeholder="Password"
+            value={password}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
             className="w-full rounded-2xl px-4 py-4 outline-none border border-white/60 bg-white/70 text-black placeholder:text-gray-500"
           />
 
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {errorMessage && (
+            <p
+              style={{
+                color: "#dc2626",
+                fontSize: "14px",
+                fontWeight: 600,
+              }}
+            >
+              {errorMessage}
+            </p>
+          )}
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
             <div
               style={{
                 flex: 1,
@@ -105,6 +181,9 @@ export default function SignInScreen({
           <div style={{ display: "flex", gap: "12px" }}>
             <button
               type="button"
+              onClick={() =>
+                alert("Google sign-in coming next.")
+              }
               style={{
                 flex: 1,
                 display: "flex",
@@ -131,6 +210,9 @@ export default function SignInScreen({
 
             <button
               type="button"
+              onClick={() =>
+                alert("Apple sign-in coming later.")
+              }
               style={{
                 flex: 1,
                 display: "flex",
@@ -157,7 +239,8 @@ export default function SignInScreen({
           </div>
 
           <button
-            onClick={onSignIn}
+            onClick={handleAuth}
+            disabled={loading}
             style={{
               width: "100%",
               padding: "16px 24px",
@@ -168,11 +251,17 @@ export default function SignInScreen({
               fontWeight: 800,
               fontSize: "17px",
               border: "none",
-              cursor: "pointer",
-              boxShadow: "0 8px 30px rgba(136, 206, 141, 0.35)",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.65 : 1,
+              boxShadow:
+                "0 8px 30px rgba(136, 206, 141, 0.35)",
             }}
           >
-            Sign In
+            {loading
+              ? "Please wait..."
+              : mode === "signin"
+                ? "Sign In"
+                : "Create Account"}
           </button>
         </div>
 
@@ -184,7 +273,36 @@ export default function SignInScreen({
             opacity: 0.75,
           }}
         >
-          New here?{" "}
+          {mode === "signin" ? "New here?" : "Already joined?"}{" "}
+          <button
+            onClick={() =>
+              setMode(
+                mode === "signin" ? "signup" : "signin"
+              )
+            }
+            style={{
+              color: "#286b35",
+              fontWeight: 800,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            {mode === "signin"
+              ? "Create account"
+              : "Sign in"}
+          </button>
+        </p>
+
+        <p
+          className="text-center mt-3"
+          style={{
+            color: "#40493f",
+            fontSize: "14px",
+            opacity: 0.75,
+          }}
+        >
+          Want to skip?{" "}
           <button
             onClick={onGuest}
             style={{

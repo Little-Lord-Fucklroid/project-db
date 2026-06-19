@@ -38,9 +38,7 @@ function capitalizeValue(value: string) {
 function extractMemoryFact(text: string) {
   const cleanText = cleanEnding(text);
 
-  const namePatterns = [
-    /my name is (.+)/i,
-  ];
+  const namePatterns = [/my name is (.+)/i];
 
   for (const pattern of namePatterns) {
     const match = cleanText.match(pattern);
@@ -51,11 +49,11 @@ function extractMemoryFact(text: string) {
   }
 
   const dogPatterns = [
-    /my dog's name is (.+)/i,
-    /my dogs name is (.+)/i,
-    /my dog is (.+)/i,
-    /(.+) is my dog/i,
-    /(.+) is the name of my dog/i,
+    /^my dog(?:'s|s)? name is (.+)/i,
+    /^my dog(?:'s|s)? name's (.+)/i,
+    /^my dog is (.+)/i,
+    /^(.+) is my dog/i,
+    /^(.+) is the name of my dog/i,
   ];
 
   for (const pattern of dogPatterns) {
@@ -67,14 +65,22 @@ function extractMemoryFact(text: string) {
   }
 
   const catPatterns = [
-    /my cat's name is (.+)/i,
-    /my cats name is (.+)/i,
-    /my cat is (.+)/i,
-    /(.+) is my cat/i,
-    /(.+) is the name of my cat/i,
+    /^my cat(?:'s|s)? name is (.+)/i,
+    /^my cat(?:'s|s)? name's (.+)/i,
+    /^my cat is (.+)/i,
+    /^(.+) is my cat/i,
+    /^(.+) is the name of my cat/i,
   ];
 
-   const personRelations = [
+  for (const pattern of catPatterns) {
+    const match = cleanText.match(pattern);
+
+    if (match?.[1]) {
+      return `Cat's name: ${capitalizeName(match[1])}`;
+    }
+  }
+
+  const personRelations = [
     "friend",
     "best friend",
     "girlfriend",
@@ -207,73 +213,73 @@ function extractMemoryFact(text: string) {
   }
 
   const favoritePattern = cleanText.match(
-  /my favorite (.+?) is (.+)/i
-);
+    /my favorite (.+?) is (.+)/i
+  );
 
-if (favoritePattern) {
-  const favoriteType = String(favoritePattern[1]);
-  const favoriteValue = String(favoritePattern[2]);
+  if (favoritePattern) {
+    const favoriteType = String(favoritePattern[1]);
+    const favoriteValue = String(favoritePattern[2]);
 
-  if (favoriteType && favoriteValue) {
-    return `Favorite ${favoriteType.toLowerCase()}: ${capitalizeValue(
-      favoriteValue
-    )}`;
+    if (favoriteType && favoriteValue) {
+      return `Favorite ${favoriteType.toLowerCase()}: ${capitalizeValue(
+        favoriteValue
+      )}`;
+    }
   }
-}
 
   const birthdayPattern = cleanText.match(
-  /my birthday is (.+)/i
-);
+    /my birthday is (.+)/i
+  );
 
-if (birthdayPattern?.[1]) {
-  return `Birthday: ${capitalizeValue(birthdayPattern[1])}`;
-}
+  if (birthdayPattern?.[1]) {
+    return `Birthday: ${capitalizeValue(birthdayPattern[1])}`;
+  }
 
-const likePattern = cleanText.match(/^i like (.+)/i);
+  const likePattern = cleanText.match(/^i like (.+)/i);
 
-if (likePattern?.[1]) {
-  return `Likes: ${capitalizeValue(likePattern[1])}`;
-}
+  if (likePattern?.[1]) {
+    return `Likes: ${capitalizeValue(likePattern[1])}`;
+  }
 
-const lovePattern = cleanText.match(/^i love (.+)/i);
+  const lovePattern = cleanText.match(/^i love (.+)/i);
 
-if (lovePattern?.[1]) {
-  return `Loves: ${capitalizeValue(lovePattern[1])}`;
-}
+  if (lovePattern?.[1]) {
+    return `Loves: ${capitalizeValue(lovePattern[1])}`;
+  }
 
-const hatePattern = cleanText.match(/^i hate (.+)/i);
+  const hatePattern = cleanText.match(/^i hate (.+)/i);
 
-if (hatePattern?.[1]) {
-  return `Dislikes: ${capitalizeValue(hatePattern[1])}`;
-}
+  if (hatePattern?.[1]) {
+    return `Dislikes: ${capitalizeValue(hatePattern[1])}`;
+  }
 
-const havePattern = cleanText.match(/^i have (.+)/i);
+  const havePattern = cleanText.match(/^i have (.+)/i);
 
-if (havePattern?.[1]) {
-  return `Has: ${capitalizeValue(havePattern[1])}`;
-}
+  if (havePattern?.[1]) {
+    return `Has: ${capitalizeValue(havePattern[1])}`;
+  }
 
-const iamPattern = cleanText.match(/^i am (.+)/i);
+  const iamPattern = cleanText.match(/^i am (.+)/i);
 
-if (iamPattern?.[1]) {
-  return `User is: ${capitalizeValue(iamPattern[1])}`;
-}
+  if (iamPattern?.[1]) {
+    return `User is: ${capitalizeValue(iamPattern[1])}`;
+  }
 
-const imPattern = cleanText.match(/^i'm (.+)/i);
+  const imPattern = cleanText.match(/^i'm (.+)/i);
 
-if (imPattern?.[1]) {
-  return `User is: ${capitalizeValue(imPattern[1])}`;
-}
+  if (imPattern?.[1]) {
+    return `User is: ${capitalizeValue(imPattern[1])}`;
+  }
 
-const rememberPattern = cleanText.match(
-  /remember that (.+)/i
-);
+  const rememberPattern = cleanText.match(
+    /remember that (.+)/i
+  );
 
-if (rememberPattern?.[1]) {
-  return `Remember: ${capitalizeValue(rememberPattern[1])}`;
-}
+  if (rememberPattern?.[1]) {
+    return `Remember: ${capitalizeValue(rememberPattern[1])}`;
+  }
 
-return null;
+  return null;
 }
 
 export function loadMemories(): Memory[] {
@@ -301,20 +307,10 @@ export function shouldSaveMemory(text: string) {
   return extractMemoryFact(text) !== null;
 }
 
-export function addMemory(text: string) {
-  const memories = loadMemories();
+export function createMemoryFromText(text: string) {
   const cleanText = extractMemoryFact(text);
 
   if (!cleanText) {
-    return null;
-  }
-
-  const alreadyExists = memories.some(
-    (memory) =>
-      memory.text.toLowerCase() === cleanText.toLowerCase()
-  );
-
-  if (alreadyExists) {
     return null;
   }
 
@@ -323,6 +319,27 @@ export function addMemory(text: string) {
     text: cleanText,
     createdAt: new Date().toISOString(),
   };
+
+  return newMemory;
+}
+
+export function addMemory(text: string) {
+  const memories = loadMemories();
+  const newMemory = createMemoryFromText(text);
+
+  if (!newMemory) {
+    return null;
+  }
+
+  const alreadyExists = memories.some(
+    (memory) =>
+      memory.text.toLowerCase() ===
+      newMemory.text.toLowerCase()
+  );
+
+  if (alreadyExists) {
+    return null;
+  }
 
   saveMemories([...memories, newMemory]);
 

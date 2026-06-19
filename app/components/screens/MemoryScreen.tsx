@@ -1,4 +1,12 @@
-import type { Memory } from "@/lib/memory";
+import {
+  addMemory,
+  clearMemories,
+  createMemoryFromText,
+  deleteMemory,
+  loadMemories,
+  memoriesToPromptText,
+  type Memory,
+} from "@/lib/memory";
 
 type MemoryScreenProps = {
   memories: Memory[];
