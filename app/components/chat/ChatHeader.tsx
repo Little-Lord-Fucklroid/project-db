@@ -5,6 +5,7 @@ import { useState } from "react";
 type ChatHeaderProps = {
   onOpenMemory: () => void;
   onNewChat: () => void | Promise<void>;
+  onLeaveGuest: () => void;
   memoryCount: number;
   currentUserId: string | null;
   incognito: boolean;
@@ -14,6 +15,7 @@ type ChatHeaderProps = {
 export default function ChatHeader({
   onOpenMemory,
   onNewChat,
+  onLeaveGuest,
   memoryCount,
   currentUserId,
   incognito,
@@ -26,6 +28,8 @@ export default function ChatHeader({
     : currentUserId
       ? "Cloud"
       : "Guest";
+
+  const showLeaveGuestButton = !currentUserId && !incognito;
 
   async function handleNewChatClick() {
     setMenuOpen(false);
@@ -105,6 +109,42 @@ export default function ChatHeader({
           🧠 {memoryCount}{" "}
           {memoryCount === 1 ? "Memory" : "Memories"}
         </button>
+
+       {showLeaveGuestButton && (
+  <button
+    onClick={onLeaveGuest}
+    title="Leave guest mode"
+    aria-label="Leave guest mode"
+    style={{
+      width: "42px",
+      height: "42px",
+      borderRadius: "999px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "#191d18",
+      border: "1px solid rgba(255, 255, 255, 0.9)",
+      color: "white",
+      boxShadow: "0 8px 25px rgba(25, 29, 24, 0.16)",
+      cursor: "pointer",
+    }}
+  >
+    <svg
+      width="23"
+      height="23"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  </button>
+)}
 
         <div style={{ position: "relative" }}>
           <button

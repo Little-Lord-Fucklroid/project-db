@@ -180,6 +180,19 @@ export default function Chat() {
 
     setIncognito(false);
   }
+
+function handleLeaveGuest() {
+  const shouldLeaveGuest = confirm(
+    "Leave guest mode and go back to sign in? Your guest chat will stay saved on this browser."
+  );
+
+  if (!shouldLeaveGuest) {
+    return;
+  }
+
+  setScreen("signin");
+}
+
 async function handleNewChat() {
   const shouldStartNewChat = confirm(
     "Start a new chat? Your old chat will stay saved as hidden context, and your memories will stay saved."
@@ -562,9 +575,10 @@ async function sendMessage() {
       <div className="light-ray opacity-20" />
 
       <div className="w-full max-w-4xl">
-      <ChatHeader
+     <ChatHeader
   onOpenMemory={() => setScreen("memory")}
   onNewChat={handleNewChat}
+  onLeaveGuest={handleLeaveGuest}
   memoryCount={memories.length}
   currentUserId={currentUserId}
   incognito={incognito}
