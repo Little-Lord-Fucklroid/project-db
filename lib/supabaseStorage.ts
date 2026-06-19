@@ -235,3 +235,54 @@ export async function clearCloudMemories() {
     throw new Error(error.message);
   }
 }
+export async function createNewCloudConversation() {
+  const userId = await getUserId();
+
+  if (!userId) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("conversations")
+    .insert({
+      user_id: userId,
+      title: "New chat",
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data.id as string;
+}
+
+export async function loadCloudContextMessages(
+  currentConversationId: string
+): Promise<CloudMessage[]> {
+  const userId = await getUserId();
+
+  if (!userId) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("messages")
+    .select("role, text, created_at")
+    .eq("user_id", userId)
+    .neq("conversation_id", currentConversationId)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data
+    .reverse()
+    .map((message) => ({
+      role: message.role as "user" | "ai",
+      text: message.text as string,
+    }));
+}

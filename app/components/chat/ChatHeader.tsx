@@ -1,43 +1,192 @@
+"use client";
+
+import { useState } from "react";
+
 type ChatHeaderProps = {
   onOpenMemory: () => void;
+  onNewChat: () => void | Promise<void>;
   memoryCount: number;
+  currentUserId: string | null;
+  incognito: boolean;
+  onSignOut: () => void | Promise<void>;
 };
 
 export default function ChatHeader({
   onOpenMemory,
+  onNewChat,
   memoryCount,
+  currentUserId,
+  incognito,
+  onSignOut,
 }: ChatHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const statusText = incognito
+    ? "Incognito"
+    : currentUserId
+      ? "Cloud"
+      : "Guest";
+
+  async function handleNewChatClick() {
+    setMenuOpen(false);
+    await onNewChat();
+  }
+
+  async function handleSignOutClick() {
+    setMenuOpen(false);
+    await onSignOut();
+  }
+
   return (
-    <div
-      className="sticky top-4 z-50 glass-card rounded-3xl px-5 py-4 mb-6 flex items-center justify-between"
+    <header
       style={{
-        boxShadow: "0 12px 40px rgba(40, 107, 53, 0.10)",
+        position: "sticky",
+        top: "20px",
+        zIndex: 100,
+        marginBottom: "18px",
+        padding: "16px 20px",
+        borderRadius: "28px",
+        background: "rgba(255, 255, 255, 0.58)",
+        border: "1px solid rgba(255, 255, 255, 0.78)",
+        boxShadow: "0 18px 60px rgba(40, 107, 53, 0.12)",
+        backdropFilter: "blur(22px)",
+        WebkitBackdropFilter: "blur(22px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
       }}
     >
-      <img
-        src="/mine_heart_nobg.png"
-        alt="Vibe"
-        className="w-11 h-11 shimmer-heart"
-      />
+      <div>
+        <h1
+          style={{
+            fontSize: "28px",
+            fontWeight: 900,
+            color: "#191d18",
+            letterSpacing: "-0.04em",
+            margin: 0,
+          }}
+        >
+          Vibe
+        </h1>
 
-      <h1
-        className="text-2xl font-bold"
-        style={{ color: "#286b35" }}
+        <p
+          style={{
+            fontSize: "13px",
+            color: "#707a6e",
+            fontWeight: 600,
+            margin: 0,
+          }}
+        >
+          {statusText} mode
+        </p>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          position: "relative",
+        }}
       >
-        Vibe AI
-      </h1>
+        <button
+          onClick={onOpenMemory}
+          style={{
+            borderRadius: "999px",
+            padding: "10px 16px",
+            fontWeight: 800,
+            background: "rgba(255, 255, 255, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.9)",
+            color: "#286b35",
+            boxShadow: "0 8px 25px rgba(40, 107, 53, 0.08)",
+            cursor: "pointer",
+          }}
+        >
+          🧠 {memoryCount}{" "}
+          {memoryCount === 1 ? "Memory" : "Memories"}
+        </button>
 
-      <button
-  onClick={onOpenMemory}
-  className="px-3 py-2 rounded-2xl text-sm font-semibold transition"
-  style={{
-    background: "rgba(255,255,255,0.6)",
-    border: "1px solid rgba(255,255,255,0.7)",
-    color: "#286b35",
-  }}
->
-  🧠 {memoryCount} {memoryCount === 1 ? "Memory" : "Memories"}
-</button>
-    </div>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label="Open chat menu"
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "999px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 900,
+              background: "rgba(255, 255, 255, 0.7)",
+              border: "1px solid rgba(255, 255, 255, 0.9)",
+              color: "#191d18",
+              boxShadow: "0 8px 25px rgba(40, 107, 53, 0.08)",
+              fontSize: "22px",
+              lineHeight: 1,
+              cursor: "pointer",
+            }}
+          >
+            ⋯
+          </button>
+
+          {menuOpen && (
+            <div
+              style={{
+                position: "absolute",
+                right: 0,
+                top: "52px",
+                width: "170px",
+                padding: "8px",
+                borderRadius: "18px",
+                background: "rgba(255, 255, 255, 0.96)",
+                border: "1px solid rgba(255, 255, 255, 0.9)",
+                boxShadow:
+                  "0 18px 45px rgba(40, 107, 53, 0.16)",
+                backdropFilter: "blur(18px)",
+                WebkitBackdropFilter: "blur(18px)",
+                zIndex: 200,
+              }}
+            >
+              <button
+                onClick={handleNewChatClick}
+                style={{
+                  width: "100%",
+                  textAlign: "left",
+                  borderRadius: "12px",
+                  padding: "12px 14px",
+                  fontWeight: 800,
+                  color: "#191d18",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                New chat
+              </button>
+
+              {currentUserId && (
+                <button
+                  onClick={handleSignOutClick}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    borderRadius: "12px",
+                    padding: "12px 14px",
+                    fontWeight: 800,
+                    color: "#191d18",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }

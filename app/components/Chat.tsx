@@ -30,8 +30,10 @@ import {
 import {
   clearCloudMemories,
   clearCloudMessages,
+  createNewCloudConversation,
   deleteCloudMemory,
   getOrCreateConversation,
+  loadCloudContextMessages,
   loadCloudMemories,
   loadCloudMessages,
   saveCloudMemory,
@@ -40,7 +42,10 @@ import {
 
 import { preloadVoices, speakText } from "@/lib/voice";
 import { startSpeechRecognition } from "@/lib/speechRecognition";
-import { getCurrentUser } from "@/lib/supabaseAuth";
+import {
+  getCurrentUser,
+  signOutUser,
+} from "@/lib/supabaseAuth";
 
 type Message = {
   role: "user" | "ai";
@@ -175,6 +180,49 @@ export default function Chat() {
 
     setIncognito(false);
   }
+async function handleNewChat() {
+  const shouldStartNewChat = confirm(
+    "Start a new chat? Your old chat will stay saved as hidden context, and your memories will stay saved."
+  );
+
+  if (!shouldStartNewChat) {
+    return;
+  }
+
+  setMessages([]);
+
+  if (currentUserId && !incognito) {
+    try {
+      const newConversationId =
+        await createNewCloudConversation();
+
+      if (newConversationId) {
+        setConversationId(newConversationId);
+      }
+    } catch (error) {
+      console.error("New cloud chat failed:", error);
+    }
+
+    return;
+  }
+
+  saveMessages([]);
+}
+
+async function handleSignOut() {
+  try {
+    await signOutUser();
+  } catch (error) {
+    console.error("Sign out failed:", error);
+  }
+
+  setCurrentUserId(null);
+  setConversationId(null);
+  setIncognito(false);
+  setMessages(loadSavedMessages());
+  setMemories(loadMemories());
+  setScreen("signin");
+}
 
   function startListening() {
     recognitionRef.current = startSpeechRecognition({
@@ -198,196 +246,221 @@ export default function Chat() {
     });
   }
 
-  async function sendMessage() {
-    if (!message.trim() || loading) return;
+async function sendMessage() {
+  if (!message.trim() || loading) return;
 
-    const userMessage = message;
+  const userMessage = message;
 
-    let activeConversationId = conversationId;
+  let activeConversationId = conversationId;
 
-    if (currentUserId && !incognito && !activeConversationId) {
-      activeConversationId = await getOrCreateConversation();
+  if (currentUserId && !incognito && !activeConversationId) {
+    activeConversationId = await getOrCreateConversation();
 
-      if (activeConversationId) {
-        setConversationId(activeConversationId);
-      }
+    if (activeConversationId) {
+      setConversationId(activeConversationId);
     }
+  }
 
-    let memoriesForPrompt = memories;
+  let memoriesForPrompt = memories;
 
-    if (currentUserId && !incognito) {
-      const memoryFromText = createMemoryFromText(userMessage);
+  if (currentUserId && !incognito) {
+    const memoryFromText = createMemoryFromText(userMessage);
 
-      if (memoryFromText) {
-        try {
-          const cloudMemory = await saveCloudMemory(
-            memoryFromText.text
-          );
-
-          if (cloudMemory) {
-            setMemories((prev) => [
-              ...prev,
-              cloudMemory,
-            ]);
-
-            memoriesForPrompt = [
-              ...memories,
-              cloudMemory,
-            ];
-          }
-        } catch (error) {
-          console.error("Cloud memory save failed:", error);
-        }
-      }
-    } else if (!incognito) {
-      const newMemory = addMemory(userMessage);
-
-      if (newMemory) {
-        setMemories((prev) => [
-          ...prev,
-          newMemory,
-        ]);
-
-        memoriesForPrompt = [
-          ...memories,
-          newMemory,
-        ];
-      }
-    }
-
-    const nextMessages: Message[] = [
-      ...messages,
-      {
-        role: "user",
-        text: userMessage,
-      },
-    ];
-
-    setMessages(nextMessages);
-    setMessage("");
-    setLoading(true);
-
-    if (currentUserId && !incognito && activeConversationId) {
+    if (memoryFromText) {
       try {
-        await saveCloudMessage(
-          activeConversationId,
-          "user",
-          userMessage
+        const cloudMemory = await saveCloudMemory(
+          memoryFromText.text
         );
+
+        if (cloudMemory) {
+          setMemories((prev) => [
+            ...prev,
+            cloudMemory,
+          ]);
+
+          memoriesForPrompt = [
+            ...memories,
+            cloudMemory,
+          ];
+        }
+      } catch (error) {
+        console.error("Cloud memory save failed:", error);
+      }
+    }
+  } else if (!incognito) {
+    const newMemory = addMemory(userMessage);
+
+    if (newMemory) {
+      setMemories((prev) => [
+        ...prev,
+        newMemory,
+      ]);
+
+      memoriesForPrompt = [
+        ...memories,
+        newMemory,
+      ];
+    }
+  }
+
+  const nextMessages: Message[] = [
+    ...messages,
+    {
+      role: "user",
+      text: userMessage,
+    },
+  ];
+
+  setMessages(nextMessages);
+  setMessage("");
+  setLoading(true);
+
+  if (currentUserId && !incognito && activeConversationId) {
+    try {
+      await saveCloudMessage(
+        activeConversationId,
+        "user",
+        userMessage
+      );
+    } catch (error) {
+      console.error(
+        "Cloud user message save failed:",
+        error
+      );
+    }
+  }
+
+  const voiceReadyPromise = preloadVoices();
+
+  const minimumThinkingPromise = new Promise<void>(
+    (resolve) => {
+      setTimeout(resolve, 500);
+    }
+  );
+
+  try {
+    let hiddenContextMessages: Message[] = [];
+
+    if (
+      currentUserId &&
+      !incognito &&
+      activeConversationId
+    ) {
+      try {
+        hiddenContextMessages =
+          await loadCloudContextMessages(
+            activeConversationId
+          );
       } catch (error) {
         console.error(
-          "Cloud user message save failed:",
+          "Cloud context load failed:",
           error
         );
       }
     }
 
-    const voiceReadyPromise = preloadVoices();
+    const messagesForAi: Message[] = [
+      ...hiddenContextMessages,
+      ...nextMessages,
+    ];
 
-    const minimumThinkingPromise = new Promise<void>(
-      (resolve) => {
-        setTimeout(resolve, 500);
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        memories: memoriesToPromptText(memoriesForPrompt),
+        messages: messagesForAi,
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log("VOICE TEST:", data.reply);
+    console.log("AI reply:", data.reply);
+
+    const reply = data.reply || "No response received.";
+
+    if (currentUserId && !incognito && activeConversationId) {
+      try {
+        await saveCloudMessage(
+          activeConversationId,
+          "ai",
+          reply
+        );
+      } catch (error) {
+        console.error(
+          "Cloud AI message save failed:",
+          error
+        );
       }
+    }
+
+    await Promise.all([
+      voiceReadyPromise,
+      minimumThinkingPromise,
+    ]);
+
+    setLoading(false);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "",
+      },
+    ]);
+
+    speakText(reply);
+
+    const duration =
+      reply.length <= 80
+        ? 1000
+        : reply.length <= 180
+          ? 3000
+          : 5000;
+
+    const intervalTime = Math.max(
+      15,
+      Math.floor(duration / reply.length)
     );
 
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          memories: memoriesToPromptText(memoriesForPrompt),
-          messages: nextMessages,
-        }),
+    let index = 0;
+
+    const typingInterval = window.setInterval(() => {
+      index++;
+
+      setMessages((prev) => {
+        const updated = [...prev];
+        const lastMessage = updated[updated.length - 1];
+
+        if (lastMessage?.role === "ai") {
+          updated[updated.length - 1] = {
+            ...lastMessage,
+            text: reply.slice(0, index),
+          };
+        }
+
+        return updated;
       });
 
-      const data = await response.json();
-
-      console.log("VOICE TEST:", data.reply);
-      console.log("AI reply:", data.reply);
-
-      const reply = data.reply || "No response received.";
-
-      if (currentUserId && !incognito && activeConversationId) {
-        try {
-          await saveCloudMessage(
-            activeConversationId,
-            "ai",
-            reply
-          );
-        } catch (error) {
-          console.error(
-            "Cloud AI message save failed:",
-            error
-          );
-        }
+      if (index >= reply.length) {
+        window.clearInterval(typingInterval);
       }
+    }, intervalTime);
+  } catch (error) {
+    setLoading(false);
 
-      await Promise.all([
-        voiceReadyPromise,
-        minimumThinkingPromise,
-      ]);
-
-      setLoading(false);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "",
-        },
-      ]);
-
-      speakText(reply);
-
-      const duration =
-        reply.length <= 80
-          ? 1000
-          : reply.length <= 180
-            ? 3000
-            : 5000;
-
-      const intervalTime = Math.max(
-        15,
-        Math.floor(duration / reply.length)
-      );
-
-      let index = 0;
-
-      const typingInterval = window.setInterval(() => {
-        index++;
-
-        setMessages((prev) => {
-          const updated = [...prev];
-          const lastMessage = updated[updated.length - 1];
-
-          if (lastMessage?.role === "ai") {
-            updated[updated.length - 1] = {
-              ...lastMessage,
-              text: reply.slice(0, index),
-            };
-          }
-
-          return updated;
-        });
-
-        if (index >= reply.length) {
-          window.clearInterval(typingInterval);
-        }
-      }, intervalTime);
-    } catch (error) {
-      setLoading(false);
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "ai",
-          text: "Something went wrong.",
-        },
-      ]);
-    }
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "Something went wrong.",
+      },
+    ]);
   }
+}
 
   if (voiceScreen) {
     return (
@@ -489,10 +562,14 @@ export default function Chat() {
       <div className="light-ray opacity-20" />
 
       <div className="w-full max-w-4xl">
-        <ChatHeader
-          onOpenMemory={() => setScreen("memory")}
-          memoryCount={memories.length}
-        />
+      <ChatHeader
+  onOpenMemory={() => setScreen("memory")}
+  onNewChat={handleNewChat}
+  memoryCount={memories.length}
+  currentUserId={currentUserId}
+  incognito={incognito}
+  onSignOut={handleSignOut}
+/>
 
         <div
           className="glass-card rounded-[32px] p-6 min-h-[75vh] mb-4"
