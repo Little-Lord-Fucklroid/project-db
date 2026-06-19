@@ -401,3 +401,47 @@ export async function loadRelevantCloudMessages(
       };
     });
 }
+export async function loadUserContextSummary() {
+  const userId = await getUserId();
+
+  if (!userId) {
+    return "";
+  }
+
+  const { data, error } = await supabase
+    .from("user_context")
+    .select("summary")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data?.summary || "";
+}
+
+export async function saveUserContextSummary(summary: string) {
+  const userId = await getUserId();
+
+  if (!userId) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("user_context")
+    .upsert(
+      {
+        user_id: userId,
+        summary,
+        updated_at: new Date().toISOString(),
+      },
+      {
+        onConflict: "user_id",
+      }
+    );
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}

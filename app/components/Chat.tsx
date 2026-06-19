@@ -36,8 +36,10 @@ import {
   loadCloudMemories,
   loadCloudMessages,
   loadRelevantCloudMessages,
+  loadUserContextSummary,
   saveCloudMemory,
   saveCloudMessage,
+  saveUserContextSummary,
 } from "@/lib/supabaseStorage";
 
 import { preloadVoices, speakText } from "@/lib/voice";
@@ -63,11 +65,13 @@ export default function Chat() {
   >(null);
 
   const [conversationId, setConversationId] = useState<
-    string | null
-  >(null);
+  string | null
+>(null);
 
-  const [initialDataLoaded, setInitialDataLoaded] =
-    useState(false);
+const [brainSummary, setBrainSummary] = useState("");
+
+const [initialDataLoaded, setInitialDataLoaded] =
+  useState(false);
 
   const [screen, setScreen] = useState<
     "start" | "signin" | "chat" | "memory"
@@ -80,38 +84,44 @@ export default function Chat() {
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  async function loadInitialData() {
-    const user = await getCurrentUser();
+async function loadInitialData() {
+  const user = await getCurrentUser();
 
-    if (user) {
-      setCurrentUserId(user.id);
-      setScreen("chat");
+  if (user) {
+    setCurrentUserId(user.id);
+    setScreen("chat");
 
-      const cloudConversationId =
-        await getOrCreateConversation();
+    const cloudConversationId =
+      await getOrCreateConversation();
 
-      if (cloudConversationId) {
-        setConversationId(cloudConversationId);
+    if (cloudConversationId) {
+      setConversationId(cloudConversationId);
 
-        const cloudMessages =
-          await loadCloudMessages(cloudConversationId);
+      const cloudMessages =
+        await loadCloudMessages(cloudConversationId);
 
-        setMessages(cloudMessages);
-      }
-
-      const cloudMemories = await loadCloudMemories();
-      setMemories(cloudMemories);
-
-      setInitialDataLoaded(true);
-      return;
+      setMessages(cloudMessages);
     }
 
-    setCurrentUserId(null);
-    setConversationId(null);
-    setMessages(loadSavedMessages());
-    setMemories(loadMemories());
+    const cloudMemories = await loadCloudMemories();
+    setMemories(cloudMemories);
+
+    const cloudBrainSummary =
+      await loadUserContextSummary();
+
+    setBrainSummary(cloudBrainSummary);
+
     setInitialDataLoaded(true);
+    return;
   }
+
+  setCurrentUserId(null);
+  setConversationId(null);
+  setBrainSummary("");
+  setMessages(loadSavedMessages());
+  setMemories(loadMemories());
+  setInitialDataLoaded(true);
+}
 
   useEffect(() => {
     loadInitialData();
@@ -195,11 +205,39 @@ function handleLeaveGuest() {
 
 async function handleNewChat() {
   const shouldStartNewChat = confirm(
-    "Start a new chat? Your old chat will stay saved as hidden context, and your memories will stay saved."
+    "Start a new chat? Your old chat will stay saved, summarized, and available as hidden context."
   );
 
   if (!shouldStartNewChat) {
     return;
+  }
+
+  if (
+    currentUserId &&
+    !incognito &&
+    messages.length > 0
+  ) {
+    try {
+      const response = await fetch("/api/summarize", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          existingSummary: brainSummary,
+          messages,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.summary) {
+        await saveUserContextSummary(data.summary);
+        setBrainSummary(data.summary);
+      }
+    } catch (error) {
+      console.error("Brain summary failed:", error);
+    }
   }
 
   setMessages([]);
@@ -231,6 +269,7 @@ async function handleSignOut() {
 
   setCurrentUserId(null);
   setConversationId(null);
+  setBrainSummary("");
   setIncognito(false);
   setMessages(loadSavedMessages());
   setMemories(loadMemories());
@@ -352,6 +391,19 @@ async function sendMessage() {
   );
 
   try {
+    let brainSummaryMessage: Message | null = null;
+
+    if (
+      currentUserId &&
+      !incognito &&
+      brainSummary.trim()
+    ) {
+      brainSummaryMessage = {
+        role: "user",
+        text: `Hidden long-term user context summary. Use this only to understand the user better. Do not say this context is hidden.\n\n${brainSummary}`,
+      };
+    }
+
     let smartRecallMessage: Message | null = null;
 
     if (
@@ -391,9 +443,15 @@ async function sendMessage() {
       }
     }
 
-    const messagesForAi: Message[] = smartRecallMessage
-      ? [smartRecallMessage, ...nextMessages]
-      : nextMessages;
+    const hiddenMessages: Message[] = [
+      ...(brainSummaryMessage ? [brainSummaryMessage] : []),
+      ...(smartRecallMessage ? [smartRecallMessage] : []),
+    ];
+
+    const messagesForAi: Message[] = [
+      ...hiddenMessages,
+      ...nextMessages,
+    ];
 
     const response = await fetch("/api/chat", {
       method: "POST",
