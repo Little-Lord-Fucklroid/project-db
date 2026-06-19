@@ -258,8 +258,9 @@ export async function createNewCloudConversation() {
   return data.id as string;
 }
 
-export async function loadCloudContextMessages(
-  currentConversationId: string
+export async function loadRelevantCloudMessages(
+  currentConversationId: string,
+  queryText: string
 ): Promise<CloudMessage[]> {
   const userId = await getUserId();
 
@@ -267,22 +268,136 @@ export async function loadCloudContextMessages(
     return [];
   }
 
+  const stopWords = new Set([
+    "what",
+    "when",
+    "where",
+    "why",
+    "how",
+    "did",
+    "does",
+    "the",
+    "and",
+    "you",
+    "me",
+    "my",
+    "your",
+    "about",
+    "tell",
+    "that",
+    "this",
+    "with",
+    "from",
+    "have",
+    "was",
+    "were",
+    "are",
+    "is",
+    "am",
+    "do",
+    "to",
+    "of",
+    "in",
+    "on",
+    "it",
+    "i",
+    "he",
+    "she",
+    "him",
+    "her",
+    "they",
+    "them",
+  ]);
+
+  const keywords = queryText
+    .toLowerCase()
+    .replace(/[^\w\s]/g, " ")
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter((word) => word.length > 2)
+    .filter((word) => !stopWords.has(word))
+    .slice(0, 8);
+
+  if (keywords.length === 0) {
+    return [];
+  }
+
   const { data, error } = await supabase
     .from("messages")
-    .select("role, text, created_at")
+    .select("conversation_id, role, text, created_at")
     .eq("user_id", userId)
     .neq("conversation_id", currentConversationId)
     .order("created_at", { ascending: false })
-    .limit(40);
+    .limit(250);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data
-    .reverse()
+  const orderedMessages = data
     .map((message) => ({
+      conversationId: message.conversation_id as string,
       role: message.role as "user" | "ai",
       text: message.text as string,
-    }));
+      createdAt: message.created_at as string,
+    }))
+    .reverse();
+
+  const matchedIndexes = orderedMessages
+    .map((message, index) => {
+      const lowerText = message.text.toLowerCase();
+
+      const score = keywords.reduce((total, keyword) => {
+        return lowerText.includes(keyword) ? total + 1 : total;
+      }, 0);
+
+      return {
+        index,
+        score,
+      };
+    })
+    .filter((match) => match.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+
+  const selectedIndexes = new Set<number>();
+
+  for (const match of matchedIndexes) {
+    const matchedMessage = orderedMessages[match.index];
+
+    if (!matchedMessage) {
+      continue;
+    }
+
+    for (
+      let nearbyIndex = match.index - 2;
+      nearbyIndex <= match.index + 4;
+      nearbyIndex++
+    ) {
+      const nearbyMessage = orderedMessages[nearbyIndex];
+
+      if (!nearbyMessage) {
+        continue;
+      }
+
+      if (
+        nearbyMessage.conversationId ===
+        matchedMessage.conversationId
+      ) {
+        selectedIndexes.add(nearbyIndex);
+      }
+    }
+  }
+
+  return Array.from(selectedIndexes)
+    .sort((a, b) => a - b)
+    .slice(0, 24)
+    .map((index) => {
+      const message = orderedMessages[index];
+
+      return {
+        role: message.role,
+        text: message.text,
+      };
+    });
 }

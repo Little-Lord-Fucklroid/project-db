@@ -33,9 +33,9 @@ import {
   createNewCloudConversation,
   deleteCloudMemory,
   getOrCreateConversation,
-  loadCloudContextMessages,
   loadCloudMemories,
   loadCloudMessages,
+  loadRelevantCloudMessages,
   saveCloudMemory,
   saveCloudMessage,
 } from "@/lib/supabaseStorage";
@@ -352,7 +352,7 @@ async function sendMessage() {
   );
 
   try {
-    let hiddenContextMessages: Message[] = [];
+    let smartRecallMessage: Message | null = null;
 
     if (
       currentUserId &&
@@ -360,22 +360,40 @@ async function sendMessage() {
       activeConversationId
     ) {
       try {
-        hiddenContextMessages =
-          await loadCloudContextMessages(
-            activeConversationId
+        const relevantOldMessages =
+          await loadRelevantCloudMessages(
+            activeConversationId,
+            userMessage
           );
+
+        if (relevantOldMessages.length > 0) {
+          const recallText = relevantOldMessages
+            .map((oldMessage) => {
+              return `${oldMessage.role.toUpperCase()}: ${
+                oldMessage.text
+              }`;
+            })
+            .join("\n\n");
+
+          smartRecallMessage = {
+            role: "user",
+            text: `Hidden relevant past conversation context. Use this only if it helps answer the user's current message. Do not say this context is hidden.\n\n${recallText}`,
+          };
+
+          console.log(
+            "SMART RECALL:",
+            relevantOldMessages.length,
+            "old messages found"
+          );
+        }
       } catch (error) {
-        console.error(
-          "Cloud context load failed:",
-          error
-        );
+        console.error("Smart recall failed:", error);
       }
     }
 
-    const messagesForAi: Message[] = [
-      ...hiddenContextMessages,
-      ...nextMessages,
-    ];
+    const messagesForAi: Message[] = smartRecallMessage
+      ? [smartRecallMessage, ...nextMessages]
+      : nextMessages;
 
     const response = await fetch("/api/chat", {
       method: "POST",
