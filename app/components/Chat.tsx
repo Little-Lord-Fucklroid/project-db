@@ -8,6 +8,7 @@ import MessageBubble from "./chat/MessageBubble";
 import ChatHeader from "./chat/ChatHeader";
 import ChatInput from "./chat/ChatInput";
 import MemoryScreen from "./screens/MemoryScreen";
+import MoodCheckScreen from "./screens/MoodCheckScreen";
 
 import {
   getIncognitoPin,
@@ -26,6 +27,12 @@ import {
   memoriesToPromptText,
   type Memory,
 } from "@/lib/memory";
+
+import {
+  loadTodayMood,
+  moodToPromptText,
+  type MoodEntry,
+} from "@/lib/moodStorage";
 
 import {
   clearCloudMemories,
@@ -69,13 +76,15 @@ export default function Chat() {
 >(null);
 
 const [brainSummary, setBrainSummary] = useState("");
+const [todayMood, setTodayMood] =
+  useState<MoodEntry | null>(null);
 
 const [initialDataLoaded, setInitialDataLoaded] =
   useState(false);
 
   const [screen, setScreen] = useState<
-    "start" | "signin" | "chat" | "memory"
-  >("start");
+  "start" | "signin" | "chat" | "memory" | "mood"
+>("start");
 
   const [incognito, setIncognito] = useState(false);
   const [listening, setListening] = useState(false);
@@ -89,7 +98,6 @@ async function loadInitialData() {
 
   if (user) {
     setCurrentUserId(user.id);
-    setScreen("chat");
 
     const cloudConversationId =
       await getOrCreateConversation();
@@ -111,6 +119,15 @@ async function loadInitialData() {
 
     setBrainSummary(cloudBrainSummary);
 
+    const existingMood = await loadTodayMood();
+    setTodayMood(existingMood);
+
+    if (existingMood) {
+      setScreen("chat");
+    } else {
+      setScreen("mood");
+    }
+
     setInitialDataLoaded(true);
     return;
   }
@@ -118,6 +135,7 @@ async function loadInitialData() {
   setCurrentUserId(null);
   setConversationId(null);
   setBrainSummary("");
+  setTodayMood(null);
   setMessages(loadSavedMessages());
   setMemories(loadMemories());
   setInitialDataLoaded(true);
@@ -270,6 +288,7 @@ async function handleSignOut() {
   setCurrentUserId(null);
   setConversationId(null);
   setBrainSummary("");
+  setTodayMood(null);
   setIncognito(false);
   setMessages(loadSavedMessages());
   setMemories(loadMemories());
@@ -443,10 +462,22 @@ async function sendMessage() {
       }
     }
 
-    const hiddenMessages: Message[] = [
-      ...(brainSummaryMessage ? [brainSummaryMessage] : []),
-      ...(smartRecallMessage ? [smartRecallMessage] : []),
-    ];
+    let moodMessage: Message | null = null;
+
+const moodPrompt = moodToPromptText(todayMood);
+
+if (currentUserId && !incognito && moodPrompt) {
+  moodMessage = {
+    role: "user",
+    text: `Hidden today's mood check-in. Use this to understand the user's emotional state. Do not say this context is hidden.\n\n${moodPrompt}`,
+  };
+}
+
+const hiddenMessages: Message[] = [
+  ...(brainSummaryMessage ? [brainSummaryMessage] : []),
+  ...(moodMessage ? [moodMessage] : []),
+  ...(smartRecallMessage ? [smartRecallMessage] : []),
+];
 
     const messagesForAi: Message[] = [
       ...hiddenMessages,
@@ -579,6 +610,16 @@ async function sendMessage() {
       />
     );
   }
+if (screen === "mood") {
+  return (
+    <MoodCheckScreen
+      onComplete={(mood) => {
+        setTodayMood(mood);
+        setScreen("chat");
+      }}
+    />
+  );
+}
 
   if (screen === "memory") {
     return (
