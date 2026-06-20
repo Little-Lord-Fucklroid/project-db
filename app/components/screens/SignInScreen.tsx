@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
   signInWithEmail,
+  signInWithGoogle,
   signUpWithEmail,
 } from "@/lib/supabaseAuth";
 
@@ -51,6 +52,22 @@ export default function SignInScreen({
         setErrorMessage("Something went wrong.");
       }
     } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+      await signInWithGoogle();
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Google sign-in failed.");
+      }
+
       setLoading(false);
     }
   }
@@ -181,9 +198,8 @@ export default function SignInScreen({
           <div style={{ display: "flex", gap: "12px" }}>
             <button
               type="button"
-              onClick={() =>
-                alert("Google sign-in coming next.")
-              }
+              onClick={handleGoogleSignIn}
+              disabled={loading}
               style={{
                 flex: 1,
                 display: "flex",
@@ -194,10 +210,11 @@ export default function SignInScreen({
                 background: "rgba(255,255,255,0.5)",
                 border: "1px solid rgba(255,255,255,0.7)",
                 borderRadius: "16px",
-                cursor: "pointer",
+                cursor: loading ? "not-allowed" : "pointer",
                 fontSize: "14px",
                 fontWeight: 600,
                 color: "#191d18",
+                opacity: loading ? 0.6 : 1,
               }}
             >
               <img
