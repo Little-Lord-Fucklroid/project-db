@@ -13,12 +13,30 @@ export default function VoiceScreen({
       <div className="mesh-bg" />
       <div className="light-ray opacity-20" />
 
-      <button
-        onClick={onBack}
-        className="absolute top-6 left-6 text-2xl"
-      >
-        ←
-      </button>
+     <button
+  onClick={onBack}
+  aria-label="Go back"
+  className="absolute top-6 left-6 z-20"
+  style={{
+    width: "44px",
+    height: "44px",
+    borderRadius: "16px",
+    background: "rgba(255, 255, 255, 0.72)",
+    color: "#286b35",
+    border: "1px solid rgba(255, 255, 255, 0.9)",
+    boxShadow: "0 10px 30px rgba(40, 107, 53, 0.12)",
+    backdropFilter: "blur(18px)",
+    WebkitBackdropFilter: "blur(18px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "26px",
+    fontWeight: 900,
+    cursor: "pointer",
+  }}
+>
+  ‹
+</button>
 
       <div className="flex flex-col items-center">
         <div
