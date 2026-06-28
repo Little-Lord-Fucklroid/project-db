@@ -9,6 +9,7 @@ import MemoryScreen from "./screens/MemoryScreen";
 import MoodCheckScreen from "./screens/MoodCheckScreen";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { sendChatMessage } from "@/lib/sendChatMessage";
+import { loadInitialChatData } from "@/lib/loadInitialChatData";
 
 import {
   getIncognitoPin,
@@ -28,11 +29,7 @@ import {
   type Memory,
 } from "@/lib/memory";
 
-import {
-  loadTodayMood,
-  moodToPromptText,
-  type MoodEntry,
-} from "@/lib/moodStorage";
+import type { MoodEntry } from "@/lib/moodStorage";
 
 import {
   clearCloudMemories,
@@ -51,10 +48,7 @@ import {
 
 import { preloadVoices, speakText } from "@/lib/voice";
 import { startSpeechRecognition } from "@/lib/speechRecognition";
-import {
-  getCurrentUser,
-  signOutUser,
-} from "@/lib/supabaseAuth";
+import { signOutUser } from "@/lib/supabaseAuth";
 
 
 export default function Chat() {
@@ -90,50 +84,19 @@ const [initialDataLoaded, setInitialDataLoaded] =
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
 async function loadInitialData() {
-  const user = await getCurrentUser();
+  const data = await loadInitialChatData();
 
-  if (user) {
-    setCurrentUserId(user.id);
+  setCurrentUserId(data.currentUserId);
+  setConversationId(data.conversationId);
+  setMessages(data.messages);
+  setMemories(data.memories);
+  setBrainSummary(data.brainSummary);
+  setTodayMood(data.todayMood);
 
-    const cloudConversationId =
-      await getOrCreateConversation();
-
-    if (cloudConversationId) {
-      setConversationId(cloudConversationId);
-
-      const cloudMessages =
-        await loadCloudMessages(cloudConversationId);
-
-      setMessages(cloudMessages);
-    }
-
-    const cloudMemories = await loadCloudMemories();
-    setMemories(cloudMemories);
-
-    const cloudBrainSummary =
-      await loadUserContextSummary();
-
-    setBrainSummary(cloudBrainSummary);
-
-    const existingMood = await loadTodayMood();
-    setTodayMood(existingMood);
-
-    if (existingMood) {
-      setScreen("chat");
-    } else {
-      setScreen("mood");
-    }
-
-    setInitialDataLoaded(true);
-    return;
+  if (data.nextScreen) {
+    setScreen(data.nextScreen);
   }
 
-  setCurrentUserId(null);
-  setConversationId(null);
-  setBrainSummary("");
-  setTodayMood(null);
-  setMessages(loadSavedMessages());
-  setMemories(loadMemories());
   setInitialDataLoaded(true);
 }
 
