@@ -5,7 +5,7 @@ import WelcomeScreen from "./screens/WelcomeScreen";
 import SignInScreen from "./screens/SignInScreen";
 import VoiceScreen from "./screens/VoiceScreen";
 import ChatShell from "./chat/ChatShell";
-import MemoryScreen from "./screens/MemoryScreen";
+import MemoryScreenController from "./chat/MemoryScreenController";
 import MoodCheckScreen from "./screens/MoodCheckScreen";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { sendChatMessage } from "@/lib/sendChatMessage";
@@ -20,33 +20,19 @@ import {
 } from "@/lib/chatStorage";
 
 import {
-  addMemory,
-  clearMemories,
-  createMemoryFromText,
-  deleteMemory,
   loadMemories,
-  memoriesToPromptText,
   type Memory,
 } from "@/lib/memory";
 
 import type { MoodEntry } from "@/lib/moodStorage";
 
 import {
-  clearCloudMemories,
-  clearCloudMessages,
   createNewCloudConversation,
-  deleteCloudMemory,
-  getOrCreateConversation,
-  loadCloudMemories,
   loadCloudMessages,
-  loadRelevantCloudMessages,
-  loadUserContextSummary,
-  saveCloudMemory,
-  saveCloudMessage,
   saveUserContextSummary,
 } from "@/lib/supabaseStorage";
 
-import { preloadVoices, speakText } from "@/lib/voice";
+
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 import { signOutUser } from "@/lib/supabaseAuth";
 
@@ -334,67 +320,19 @@ if (screen === "mood") {
   );
 }
 
-  if (screen === "memory") {
-    return (
-      <MemoryScreen
-        memories={memories}
-        onBack={() => setScreen("chat")}
-        onDelete={async (id) => {
-          if (currentUserId && !incognito) {
-            await deleteCloudMemory(id);
-
-            setMemories((prev) =>
-              prev.filter((memory) => memory.id !== id)
-            );
-          } else {
-            const result = deleteMemory(id);
-
-            setMemories(result.updatedMemories);
-          }
-          const shouldClearChat = confirm(
-            "Memory deleted. This fact may still appear in your chat history. Clear chat history too?"
-          );
-
-          if (shouldClearChat) {
-            setMessages([]);
-
-            if (
-              currentUserId &&
-              !incognito &&
-              conversationId
-            ) {
-              await clearCloudMessages(conversationId);
-            } else {
-              saveMessages([]);
-            }
-          }
-        }}
-        onClearMemories={async () => {
-          setMemories([]);
-
-          if (currentUserId && !incognito) {
-            await clearCloudMemories();
-          } else {
-            clearMemories();
-          }
-        }}
-        onClearChatHistory={async () => {
-          setMessages([]);
-
-          if (
-            currentUserId &&
-            !incognito &&
-            conversationId
-          ) {
-            await clearCloudMessages(conversationId);
-          } else {
-            saveMessages([]);
-          }
-        }}
-      />
-    );
-  }
-
+if (screen === "memory") {
+  return (
+    <MemoryScreenController
+      memories={memories}
+      setMemories={setMemories}
+      setMessages={setMessages}
+      currentUserId={currentUserId}
+      incognito={incognito}
+      conversationId={conversationId}
+      onBack={() => setScreen("chat")}
+    />
+  );
+}
   return (
   <ChatShell
     messages={messages}
