@@ -28,7 +28,7 @@ export function preloadVoices() {
 
     const timeout = window.setTimeout(() => {
       resolve();
-    }, 1200);
+    }, 1500);
 
     window.speechSynthesis.onvoiceschanged = () => {
       window.clearTimeout(timeout);
@@ -41,38 +41,34 @@ export function preloadVoices() {
 
 function cleanTextForSpeech(text: string) {
   return text
-    // remove markdown
     .replace(/\*\*/g, "")
     .replace(/\*/g, "")
     .replace(/_/g, "")
     .replace(/`/g, "")
     .replace(/#{1,6}\s/g, "")
 
-    // make filler sounds pronounce naturally
+    // softer filler sounds
     .replace(/\b[uU]+m{2,}\b/g, "um")
-    .replace(/\b[hH]+m{2,}\b/g, "hmm")
     .replace(/\b[mM]{2,}\b/g, "hmm")
+    .replace(/\b[hH]+m{2,}\b/g, "hmm")
     .replace(/\b[aA]+h{2,}\b/g, "ah")
     .replace(/\b[oO]+h{2,}\b/g, "oh")
     .replace(/\b[uU]+h{2,}\b/g, "uh")
 
-    // laughter / soft emotional sounds
-    .replace(/\b[hH]e[hH]e\b/g, "heh heh")
-    .replace(/\b[hH]e[hH]e[hH]e+\b/g, "heh heh")
-    .replace(/\b[hH]aha+\b/g, "ha ha")
-    .replace(/\b[lL]ol\b/g, "laughing")
-
-    // fixes "aww" being spoken as letters
+    // natural emotional sounds
     .replace(/\b[aA]+w{2,}\b/g, "aw")
     .replace(/\b[aA]+w+h+\b/g, "aw")
+    .replace(/\b[hH]e[hH]e+\b/g, "heh heh")
+    .replace(/\b[hH]aha+\b/g, "ha ha")
+    .replace(/\b[lL]ol\b/g, "haha")
 
-    // stretched common words
+    // stretched words
     .replace(/\b[oO]{2,}kay\b/g, "okay")
     .replace(/\b[yY]+e+s+\b/g, "yes")
     .replace(/\b[nN]+o+\b/g, "no")
     .replace(/\b[sS]+o+\b/g, "so")
 
-    // prevent awkward symbol reading
+    // punctuation cleanup
     .replace(/—/g, ", ")
     .replace(/–/g, ", ")
     .replace(/…/g, "...")
@@ -89,12 +85,15 @@ function pickBestVoice() {
   }
 
   const preferredVoiceNames = [
+    // best classic macOS voices
     "Samantha",
-    "Victoria",
     "Karen",
+    "Victoria",
     "Serena",
     "Ava",
     "Susan",
+
+    // good Chrome / Windows fallbacks
     "Google UK English Female",
     "Google US English",
     "Microsoft Jenny",
@@ -169,7 +168,7 @@ function splitIntoSpeechChunks(text: string) {
       continue;
     }
 
-    if (sentence.length <= 180) {
+    if (sentence.length <= 150) {
       chunks.push(sentence);
       continue;
     }
@@ -183,7 +182,7 @@ function splitIntoSpeechChunks(text: string) {
         ? `${currentChunk}, ${smallerPart}`
         : smallerPart;
 
-      if (nextChunk.length > 170) {
+      if (nextChunk.length > 140) {
         if (currentChunk) {
           chunks.push(currentChunk.trim());
         }
@@ -211,12 +210,12 @@ function wait(milliseconds: number) {
 function getNaturalPause(chunk: string) {
   const basePause =
     chunk.endsWith("?") || chunk.endsWith("!")
-      ? 430
+      ? 360
       : chunk.endsWith(".")
-        ? 380
-        : 240;
+        ? 320
+        : 190;
 
-  const randomExtra = Math.floor(Math.random() * 260);
+  const randomExtra = Math.floor(Math.random() * 170);
 
   return basePause + randomExtra;
 }
@@ -241,8 +240,9 @@ function speakChunk(
       utterance.lang = "en-US";
     }
 
-    utterance.rate = 0.95;
-    utterance.pitch = 1.5;
+    // natural female browser voice settings
+    utterance.rate = 0.9;
+    utterance.pitch = 1.02;
     utterance.volume = 1;
 
     utterance.onend = () => resolve();
