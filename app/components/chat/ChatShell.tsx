@@ -64,9 +64,9 @@ export default function ChatShell({
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[520px] flex-col overflow-x-hidden pt-[96px] pb-[180px]">
+      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[520px] flex-col overflow-x-hidden pt-[96px] pb-[148px]">
         <div
-          className="glass-card min-h-[62dvh] w-full max-w-full overflow-x-hidden rounded-[28px] p-4 sm:min-h-[75vh] sm:rounded-[32px] sm:p-6"
+          className="glass-card flex-1 w-full max-w-full overflow-x-hidden overflow-y-auto rounded-[28px] p-4 sm:rounded-[32px] sm:p-6"
           style={{
             boxShadow:
               "0 16px 60px rgba(40, 107, 53, 0.08)",
