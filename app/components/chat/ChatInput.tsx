@@ -20,44 +20,50 @@ export default function ChatInput({
   onToggleIncognito,
 }: ChatInputProps) {
   return (
-    <div className="sticky bottom-4 z-50 bg-white/90 backdrop-blur border border-pink-100 rounded-3xl shadow-lg p-3 flex gap-2">
-      <input
-        className="bg-pink-50 text-black placeholder:text-gray-500 border border-pink-100 p-3 flex-1 rounded-2xl outline-none focus:ring-2 focus:ring-pink-200"
-        placeholder="Type a message..."
-        value={message}
-        onChange={(e) => onMessageChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            onSend();
-          }
-        }}
-      />
+    <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2 overflow-hidden rounded-3xl border border-white/50 bg-white/45 p-3 backdrop-blur-xl">
+      <div className="flex w-full flex-col gap-2">
+        <input
+          className="min-w-0 w-full rounded-2xl border border-pink-100 bg-pink-50 p-3 text-black outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-pink-200"
+          placeholder="Type a message..."
+          value={message}
+          onChange={(e) => onMessageChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              onSend();
+            }
+          }}
+        />
 
-      <button
-        onClick={onOpenVoiceScreen}
-        className={`px-4 py-3 rounded-2xl shadow-sm transition ${
-          listening
-            ? "bg-pink-500 text-white"
-            : "bg-white border border-pink-100 text-pink-600 hover:bg-pink-50"
-        }`}
-      >
-        {listening ? "Listening..." : "🎤"}
-      </button>
+        <div className="grid w-full grid-cols-[56px_minmax(0,1fr)_78px] gap-2">
+          <button
+            onClick={onOpenVoiceScreen}
+            className={`h-12 rounded-2xl shadow-sm transition ${
+              listening
+                ? "bg-pink-500 text-white"
+                : "border border-pink-100 bg-white text-pink-600 hover:bg-pink-50"
+            }`}
+          >
+            {listening ? "..." : "🎤"}
+          </button>
 
-      <button
-        onClick={onToggleIncognito}
-        className="bg-white text-black border border-gray-300 px-4 py-2 rounded-xl shadow-sm hover:bg-gray-50"
-      >
-        {incognito ? "🌙 Exit Incognito" : "🌙 Incognito"}
-      </button>
+          <button
+            onClick={onToggleIncognito}
+            className="min-w-0 rounded-2xl border border-gray-300 bg-white px-2 text-sm text-black shadow-sm hover:bg-gray-50"
+          >
+            <span className="block truncate">
+              {incognito ? "🌙 Exit" : "🌙 Incognito"}
+            </span>
+          </button>
 
-      <button
-        onClick={onSend}
-        className="bg-pink-500 text-white px-6 py-3 rounded-2xl shadow-md hover:bg-pink-600 transition disabled:opacity-50"
-        disabled={loading}
-      >
-        {loading ? "..." : "Send"}
-      </button>
+          <button
+            onClick={onSend}
+            className="h-12 rounded-2xl bg-pink-500 text-sm font-semibold text-white shadow-md transition hover:bg-pink-600 disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

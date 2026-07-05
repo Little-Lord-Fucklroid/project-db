@@ -43,32 +43,37 @@ export default function ChatShell({
 }: ChatShellProps) {
   return (
     <main
-      className="min-h-screen flex justify-center p-5 relative"
+      className="relative min-h-dvh w-full overflow-x-hidden px-3 py-4"
       style={{ background: "#f7faf3" }}
     >
       <div className="mesh-bg" />
       <div className="light-ray opacity-20" />
 
-      <div className="w-full max-w-4xl">
-        <ChatHeader
-          onOpenMemory={onOpenMemory}
-          onNewChat={onNewChat}
-          onLeaveGuest={onLeaveGuest}
-          memoryCount={memoryCount}
-          currentUserId={currentUserId}
-          incognito={incognito}
-          onSignOut={onSignOut}
-        />
+      {/* fixed floating top bar */}
+      <div className="fixed left-1/2 top-4 z-50 w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2">
+        <div className="rounded-[32px] border border-white/50 bg-white/45 backdrop-blur-xl">
+          <ChatHeader
+            onOpenMemory={onOpenMemory}
+            onNewChat={onNewChat}
+            onLeaveGuest={onLeaveGuest}
+            memoryCount={memoryCount}
+            currentUserId={currentUserId}
+            incognito={incognito}
+            onSignOut={onSignOut}
+          />
+        </div>
+      </div>
 
+      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-[520px] flex-col overflow-x-hidden pt-[96px] pb-[180px]">
         <div
-          className="glass-card rounded-[32px] p-6 min-h-[75vh] mb-4"
+          className="glass-card min-h-[62dvh] w-full max-w-full overflow-x-hidden rounded-[28px] p-4 sm:min-h-[75vh] sm:rounded-[32px] sm:p-6"
           style={{
             boxShadow:
               "0 16px 60px rgba(40, 107, 53, 0.08)",
           }}
         >
           {messages.length === 0 && (
-            <p>Start chatting...</p>
+            <p className="text-gray-400">Start chatting...</p>
           )}
 
           {messages.map((msg, index) => (
