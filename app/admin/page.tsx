@@ -29,17 +29,58 @@ type AdminUser = {
   conversations: AdminConversation[];
 };
 
+type DailyTraffic = {
+  label: string;
+  messages: number;
+  newUsers: number;
+};
+
+type TopUserByTime = {
+  email: string;
+  estimatedMinutesSpent: number;
+  messageCount: number;
+};
+
 type AdminOverview = {
   currentAdmin: string;
-  totalUsers: number;
-  totalConversations: number;
-  totalMessages: number;
+  totals: {
+    users: number;
+    conversations: number;
+    messages: number;
+    estimatedMinutesSpent: number;
+  };
+  recent: {
+    newUsers24h: number;
+    newUsers7d: number;
+    newUsers30d: number;
+    messages24h: number;
+    messages7d: number;
+    messages30d: number;
+    newUsers24hList: {
+      id: string;
+      email: string;
+      createdAt: string | null;
+    }[];
+    newUsers7dList: {
+      id: string;
+      email: string;
+      createdAt: string | null;
+    }[];
+    newUsers30dList: {
+      id: string;
+      email: string;
+      createdAt: string | null;
+    }[];
+  };
+  charts: {
+    dailyTraffic: DailyTraffic[];
+    topUsersByTime: TopUserByTime[];
+  };
   users: AdminUser[];
 };
 
 function formatDate(value: string | null) {
   if (!value) return "—";
-
   return new Date(value).toLocaleString();
 }
 
@@ -60,6 +101,10 @@ function formatTimeSpent(minutes: number) {
   return `${hours}h ${remainingMinutes}m`;
 }
 
+function getMaxValue(values: number[]) {
+  return Math.max(...values, 1);
+}
+
 export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] =
@@ -68,6 +113,9 @@ export default function AdminPage() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedConversationId, setSelectedConversationId] =
     useState("");
+  const [recentFilter, setRecentFilter] = useState<
+    "24h" | "7d" | "30d"
+  >("24h");
 
   useEffect(() => {
     async function loadAdminOverview() {
@@ -134,11 +182,25 @@ export default function AdminPage() {
     );
   }, [selectedUser, selectedConversationId]);
 
+  const recentUsers = useMemo(() => {
+    if (!overview) return [];
+
+    if (recentFilter === "24h") {
+      return overview.recent.newUsers24hList;
+    }
+
+    if (recentFilter === "7d") {
+      return overview.recent.newUsers7dList;
+    }
+
+    return overview.recent.newUsers30dList;
+  }, [overview, recentFilter]);
+
   if (loading) {
     return (
       <main className="min-h-dvh bg-[#f7faf3] p-5 text-black">
-        <div className="mx-auto max-w-6xl rounded-3xl bg-white/70 p-6 backdrop-blur-xl">
-          Loading admin dashboard...
+        <div className="mx-auto max-w-7xl rounded-[32px] border border-white/60 bg-white/70 p-6 backdrop-blur-xl">
+          <p className="text-gray-600">Loading admin dashboard...</p>
         </div>
       </main>
     );
@@ -147,7 +209,7 @@ export default function AdminPage() {
   if (error) {
     return (
       <main className="min-h-dvh bg-[#f7faf3] p-5 text-black">
-        <div className="mx-auto max-w-6xl rounded-3xl bg-white/70 p-6 backdrop-blur-xl">
+        <div className="mx-auto max-w-7xl rounded-[32px] border border-white/60 bg-white/70 p-6 backdrop-blur-xl">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <p className="mt-3 text-red-600">{error}</p>
 
@@ -166,18 +228,33 @@ export default function AdminPage() {
     return null;
   }
 
+  const maxTraffic = getMaxValue(
+    overview.charts.dailyTraffic.flatMap((day) => [
+      day.messages,
+      day.newUsers,
+    ])
+  );
+
+  const maxTopUserTime = getMaxValue(
+    overview.charts.topUsersByTime.map(
+      (user) => user.estimatedMinutesSpent
+    )
+  );
+
   return (
     <main className="min-h-dvh bg-[#f7faf3] p-4 text-black sm:p-6">
       <div className="mx-auto max-w-7xl">
-        <div className="rounded-3xl bg-white/70 p-5 backdrop-blur-xl">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <section className="rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-pink-500">
                 Vibe Admin
               </p>
+
               <h1 className="text-3xl font-bold">
                 Admin Dashboard
               </h1>
+
               <p className="mt-1 text-sm text-gray-500">
                 Signed in as {overview.currentAdmin}
               </p>
@@ -190,25 +267,208 @@ export default function AdminPage() {
               Back to chat
             </a>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-5 grid gap-4 sm:grid-cols-3">
-          <StatCard label="Users" value={overview.totalUsers} />
+        <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Total Users"
+            value={overview.totals.users}
+          />
+
           <StatCard
             label="Conversations"
-            value={overview.totalConversations}
+            value={overview.totals.conversations}
           />
+
           <StatCard
             label="Messages"
-            value={overview.totalMessages}
+            value={overview.totals.messages}
           />
-        </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[360px_1fr]">
-          <section className="rounded-3xl bg-white/70 p-4 backdrop-blur-xl">
-            <h2 className="text-xl font-bold">Users</h2>
+          <StatCard
+            label="Estimated Time"
+            value={formatTimeSpent(
+              overview.totals.estimatedMinutesSpent
+            )}
+          />
+        </section>
 
-            <div className="mt-4 space-y-3">
+        <section className="mt-5 grid gap-4 lg:grid-cols-3">
+          <RecentCard
+            label="Past 24 hours"
+            users={overview.recent.newUsers24h}
+            messages={overview.recent.messages24h}
+          />
+
+          <RecentCard
+            label="Past 7 days"
+            users={overview.recent.newUsers7d}
+            messages={overview.recent.messages7d}
+          />
+
+          <RecentCard
+            label="Past 30 days"
+            users={overview.recent.newUsers30d}
+            messages={overview.recent.messages30d}
+          />
+        </section>
+
+        <section className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold">
+                  Recent Traffic
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Messages and new users over the last 7 days.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {overview.charts.dailyTraffic.map((day) => (
+                <div key={day.label}>
+                  <div className="mb-1 flex justify-between text-xs text-gray-500">
+                    <span>{day.label}</span>
+                    <span>
+                      {day.messages} msgs · {day.newUsers} users
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Bar
+                      value={day.messages}
+                      max={maxTraffic}
+                      label="Messages"
+                      tone="pink"
+                    />
+
+                    <Bar
+                      value={day.newUsers}
+                      max={maxTraffic}
+                      label="New users"
+                      tone="green"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
+            <h2 className="text-xl font-bold">Top Time Spent</h2>
+            <p className="text-sm text-gray-500">
+              Estimated from message activity.
+            </p>
+
+            <div className="mt-5 space-y-4">
+              {overview.charts.topUsersByTime.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  No activity yet.
+                </p>
+              )}
+
+              {overview.charts.topUsersByTime.map((user) => (
+                <div key={user.email}>
+                  <div className="mb-1 flex justify-between gap-3 text-xs text-gray-500">
+                    <span className="truncate">{user.email}</span>
+                    <span className="shrink-0">
+                      {formatTimeSpent(
+                        user.estimatedMinutesSpent
+                      )}
+                    </span>
+                  </div>
+
+                  <Bar
+                    value={user.estimatedMinutesSpent}
+                    max={maxTopUserTime}
+                    label="Time"
+                    tone="pink"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-xl font-bold">New Users</h2>
+              <p className="text-sm text-gray-500">
+                See users who joined recently.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 rounded-2xl bg-white/70 p-1 text-sm">
+              <button
+                onClick={() => setRecentFilter("24h")}
+                className={`rounded-xl px-3 py-2 ${
+                  recentFilter === "24h"
+                    ? "bg-pink-500 text-white"
+                    : "text-gray-600"
+                }`}
+              >
+                24h
+              </button>
+
+              <button
+                onClick={() => setRecentFilter("7d")}
+                className={`rounded-xl px-3 py-2 ${
+                  recentFilter === "7d"
+                    ? "bg-pink-500 text-white"
+                    : "text-gray-600"
+                }`}
+              >
+                7d
+              </button>
+
+              <button
+                onClick={() => setRecentFilter("30d")}
+                className={`rounded-xl px-3 py-2 ${
+                  recentFilter === "30d"
+                    ? "bg-pink-500 text-white"
+                    : "text-gray-600"
+                }`}
+              >
+                30d
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {recentUsers.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No new users in this period.
+              </p>
+            )}
+
+            {recentUsers.map((user) => (
+              <div
+                key={user.id}
+                className="rounded-2xl bg-white/70 p-4"
+              >
+                <p className="truncate font-semibold">
+                  {user.email}
+                </p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  Joined {formatDate(user.createdAt)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-5 grid gap-5 lg:grid-cols-[360px_1fr]">
+          <div className="rounded-[32px] border border-white/60 bg-white/70 p-4 backdrop-blur-xl">
+            <h2 className="text-xl font-bold">All Users</h2>
+            <p className="text-sm text-gray-500">
+              Click a user to view conversations.
+            </p>
+
+            <div className="mt-4 max-h-[700px] space-y-3 overflow-y-auto pr-1">
               {overview.users.map((user) => (
                 <button
                   key={user.id}
@@ -242,15 +502,15 @@ export default function AdminPage() {
                 </button>
               ))}
             </div>
-          </section>
+          </div>
 
-          <section className="rounded-3xl bg-white/70 p-4 backdrop-blur-xl">
+          <div className="rounded-[32px] border border-white/60 bg-white/70 p-4 backdrop-blur-xl">
             {!selectedUser ? (
               <p className="text-gray-500">Select a user.</p>
             ) : (
               <>
                 <div className="border-b border-white/70 pb-4">
-                  <h2 className="text-xl font-bold">
+                  <h2 className="truncate text-xl font-bold">
                     {selectedUser.email}
                   </h2>
 
@@ -275,7 +535,7 @@ export default function AdminPage() {
                   <div>
                     <h3 className="font-bold">Conversations</h3>
 
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-3 max-h-[560px] space-y-2 overflow-y-auto pr-1">
                       {selectedUser.conversations.length === 0 && (
                         <p className="text-sm text-gray-500">
                           No conversations yet.
@@ -354,12 +614,13 @@ export default function AdminPage() {
                 </div>
               </>
             )}
-          </section>
-        </div>
+          </div>
+        </section>
 
         <p className="mt-5 text-sm text-gray-500">
           Time spent is estimated from message activity. Exact live
-          screen time can be added later with session tracking.
+          screen time can be added later with lightweight session
+          tracking.
         </p>
       </div>
     </main>
@@ -371,14 +632,74 @@ function StatCard({
   value,
 }: {
   label: string;
-  value: number;
+  value: string | number;
 }) {
   return (
-    <div className="rounded-3xl bg-white/70 p-5 backdrop-blur-xl">
+    <div className="rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
       <p className="text-sm font-semibold text-gray-500">
         {label}
       </p>
-      <p className="mt-3 text-4xl font-bold">{value}</p>
+      <p className="mt-3 text-3xl font-bold sm:text-4xl">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function RecentCard({
+  label,
+  users,
+  messages,
+}: {
+  label: string;
+  users: number;
+  messages: number;
+}) {
+  return (
+    <div className="rounded-[32px] border border-white/60 bg-white/70 p-5 backdrop-blur-xl">
+      <p className="text-sm font-semibold text-gray-500">
+        {label}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-3xl font-bold">{users}</p>
+          <p className="text-sm text-gray-500">new users</p>
+        </div>
+
+        <div>
+          <p className="text-3xl font-bold">{messages}</p>
+          <p className="text-sm text-gray-500">messages</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Bar({
+  value,
+  max,
+  label,
+  tone,
+}: {
+  value: number;
+  max: number;
+  label: string;
+  tone: "pink" | "green";
+}) {
+  const width = `${Math.max((value / max) * 100, value > 0 ? 8 : 0)}%`;
+
+  return (
+    <div>
+      <div className="h-3 overflow-hidden rounded-full bg-white/80">
+        <div
+          className={`h-full rounded-full transition-all ${
+            tone === "pink" ? "bg-pink-400" : "bg-green-400"
+          }`}
+          style={{ width }}
+          title={`${label}: ${value}`}
+        />
+      </div>
     </div>
   );
 }

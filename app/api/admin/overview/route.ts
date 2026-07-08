@@ -36,6 +36,18 @@ function getSupabaseAdmin() {
   });
 }
 
+function isAfter(value: string | null | undefined, cutoff: Date) {
+  if (!value) return false;
+  return new Date(value).getTime() >= cutoff.getTime();
+}
+
+function getDayLabel(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function estimateTimeSpentMinutes(messages: DbMessage[]) {
   const times = messages
     .map((message) =>
@@ -74,6 +86,48 @@ function estimateTimeSpentMinutes(messages: DbMessage[]) {
   return Math.round(totalMs / 60000);
 }
 
+function buildDailyTraffic(messages: DbMessage[], users: { created_at?: string }[]) {
+  const today = new Date();
+  const days = Array.from({ length: 7 }).map((_, index) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() - (6 - index));
+    date.setHours(0, 0, 0, 0);
+
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + 1);
+
+    const messagesOnDay = messages.filter((message) => {
+      if (!message.created_at) return false;
+
+      const time = new Date(message.created_at).getTime();
+
+      return (
+        time >= date.getTime() &&
+        time < nextDate.getTime()
+      );
+    });
+
+    const usersOnDay = users.filter((user) => {
+      if (!user.created_at) return false;
+
+      const time = new Date(user.created_at).getTime();
+
+      return (
+        time >= date.getTime() &&
+        time < nextDate.getTime()
+      );
+    });
+
+    return {
+      label: getDayLabel(date),
+      messages: messagesOnDay.length,
+      newUsers: usersOnDay.length,
+    };
+  });
+
+  return days;
+}
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization") || "";
@@ -108,6 +162,17 @@ export async function GET(req: Request) {
         { status: 403 }
       );
     }
+
+    const now = new Date();
+
+    const last24Hours = new Date(now);
+    last24Hours.setHours(now.getHours() - 24);
+
+    const last7Days = new Date(now);
+    last7Days.setDate(now.getDate() - 7);
+
+    const last30Days = new Date(now);
+    last30Days.setDate(now.getDate() - 30);
 
     const { data: usersData, error: usersError } =
       await supabaseAdmin.auth.admin.listUsers({
@@ -173,11 +238,98 @@ export async function GET(req: Request) {
       };
     });
 
+    const newUsers24h = usersData.users.filter((userItem) =>
+      isAfter(userItem.created_at, last24Hours)
+    );
+
+    const newUsers7d = usersData.users.filter((userItem) =>
+      isAfter(userItem.created_at, last7Days)
+    );
+
+    const newUsers30d = usersData.users.filter((userItem) =>
+      isAfter(userItem.created_at, last30Days)
+    );
+
+    const messages24h = safeMessages.filter((message) =>
+      isAfter(message.created_at, last24Hours)
+    );
+
+    const messages7d = safeMessages.filter((message) =>
+      isAfter(message.created_at, last7Days)
+    );
+
+    const messages30d = safeMessages.filter((message) =>
+      isAfter(message.created_at, last30Days)
+    );
+
+    const totalEstimatedMinutesSpent = users.reduce(
+      (total, userItem) =>
+        total + userItem.estimatedMinutesSpent,
+      0
+    );
+
+    const dailyTraffic = buildDailyTraffic(
+      safeMessages,
+      usersData.users
+    );
+
+    const topUsersByTime = [...users]
+      .sort(
+        (a, b) =>
+          b.estimatedMinutesSpent -
+          a.estimatedMinutesSpent
+      )
+      .slice(0, 5)
+      .map((userItem) => ({
+        email: userItem.email,
+        estimatedMinutesSpent:
+          userItem.estimatedMinutesSpent,
+        messageCount: userItem.messageCount,
+      }));
+
     return Response.json({
       currentAdmin: adminEmail,
-      totalUsers: users.length,
-      totalConversations: safeConversations.length,
-      totalMessages: safeMessages.length,
+
+      totals: {
+        users: users.length,
+        conversations: safeConversations.length,
+        messages: safeMessages.length,
+        estimatedMinutesSpent: totalEstimatedMinutesSpent,
+      },
+
+      recent: {
+        newUsers24h: newUsers24h.length,
+        newUsers7d: newUsers7d.length,
+        newUsers30d: newUsers30d.length,
+
+        messages24h: messages24h.length,
+        messages7d: messages7d.length,
+        messages30d: messages30d.length,
+
+        newUsers24hList: newUsers24h.map((userItem) => ({
+          id: userItem.id,
+          email: userItem.email || "No email",
+          createdAt: userItem.created_at,
+        })),
+
+        newUsers7dList: newUsers7d.map((userItem) => ({
+          id: userItem.id,
+          email: userItem.email || "No email",
+          createdAt: userItem.created_at,
+        })),
+
+        newUsers30dList: newUsers30d.map((userItem) => ({
+          id: userItem.id,
+          email: userItem.email || "No email",
+          createdAt: userItem.created_at,
+        })),
+      },
+
+      charts: {
+        dailyTraffic,
+        topUsersByTime,
+      },
+
       users,
     });
   } catch (error) {
