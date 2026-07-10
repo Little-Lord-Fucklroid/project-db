@@ -8,7 +8,7 @@ import ChatShell from "./chat/ChatShell";
 import MemoryScreenController from "./chat/MemoryScreenController";
 import MoodCheckScreen from "./screens/MoodCheckScreen";
 import IncognitoPinModal from "./IncognitoPinModal";
-import ConfirmModal from "./ConfirmModal"; // NEW
+import ConfirmModal from "./ConfirmModal";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { sendChatMessage } from "@/lib/sendChatMessage";
 import { loadInitialChatData } from "@/lib/loadInitialChatData";
@@ -32,6 +32,9 @@ import {
 
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 import { signOutUser } from "@/lib/supabaseAuth";
+
+// --- CHANGED: limit reduced to 7 ---
+const GUEST_MESSAGE_LIMIT = 7;
 
 export default function Chat() {
   const [message, setMessage] = useState("");
@@ -58,7 +61,7 @@ export default function Chat() {
   const [pinModalMode, setPinModalMode] = useState<"create" | "unlock">("create");
   const [pinError, setPinError] = useState("");
 
-  // --- NEW: Confirmation modal state ---
+  // Confirmation modal state
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string;
@@ -70,8 +73,16 @@ export default function Chat() {
     onConfirm: () => {},
   });
 
+  // Guest limit modal state
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
+
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Compute guest message count and limit status
+  const guestMessageCount = messages.filter((m) => m.role === "user").length;
+  const isGuest = !currentUserId;
+  const guestLimitReached = isGuest && guestMessageCount >= GUEST_MESSAGE_LIMIT;
 
   async function loadInitialData() {
     const data = await loadInitialChatData();
@@ -178,7 +189,6 @@ export default function Chat() {
     setIncognito(false);
   }
 
-  // --- REPLACED: handleLeaveGuest now uses the confirmation modal ---
   function handleLeaveGuest() {
     setConfirmConfig({
       title: "Leave Guest Mode?",
@@ -191,7 +201,6 @@ export default function Chat() {
     setShowConfirm(true);
   }
 
-  // --- REPLACED: handleNewChat now uses the confirmation modal ---
   async function handleNewChat() {
     setConfirmConfig({
       title: "Start New Chat?",
@@ -200,7 +209,6 @@ export default function Chat() {
       onConfirm: async () => {
         setShowConfirm(false);
 
-        // Original logic from handleNewChat
         if (currentUserId && !incognito && messages.length > 0) {
           try {
             const response = await fetch("/api/summarize", {
@@ -262,9 +270,32 @@ export default function Chat() {
     });
   }
 
+  // --- CHANGED: sendMessage handles the 7th message without AI reply ---
   async function sendMessage() {
+    // If limit already reached, show modal and block
+    if (guestLimitReached) {
+      setShowGuestLimitModal(true);
+      return;
+    }
+
+    const text = message.trim();
+    if (!text) return;
+
+    const newCount = guestMessageCount + 1;
+
+    // If this message would reach the limit, add user message manually and stop
+    if (newCount >= GUEST_MESSAGE_LIMIT) {
+      // Add the user message
+      setMessages((prev) => [...prev, { role: "user", text }]);
+      setMessage("");
+      // Show the sign‑in modal (no AI reply)
+      setShowGuestLimitModal(true);
+      return;
+    }
+
+    // Otherwise, proceed normally with AI
     await sendChatMessage({
-      text: message,
+      text,
       loading,
       messages,
       setMessages,
@@ -280,6 +311,11 @@ export default function Chat() {
       todayMood,
       shouldSpeak: true,
     });
+  }
+
+  function handleGuestLimitSignIn() {
+    setShowGuestLimitModal(false);
+    setScreen("signin");
   }
 
   // --- RENDER LOGIC ---
@@ -344,7 +380,7 @@ export default function Chat() {
         />
       )}
 
-      {/* NEW: Confirmation Modal */}
+      {/* Confirmation Modal */}
       {showConfirm && (
         <ConfirmModal
           title={confirmConfig.title}
@@ -353,9 +389,20 @@ export default function Chat() {
           cancelLabel="Cancel"
           onConfirm={() => {
             confirmConfig.onConfirm();
-            // The onConfirm callback will setShowConfirm(false) itself
           }}
           onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
+      {/* Guest Limit Modal */}
+      {showGuestLimitModal && (
+        <ConfirmModal
+          title="Guest Limit Reached"
+          message="You've reached the maximum of 7 messages in guest mode. Please sign in to continue chatting."
+          confirmLabel="Sign In"
+          cancelLabel="Close"
+          onConfirm={handleGuestLimitSignIn}
+          onCancel={() => setShowGuestLimitModal(false)}
         />
       )}
 
@@ -368,6 +415,7 @@ export default function Chat() {
         memoryCount={memories.length}
         currentUserId={currentUserId}
         messagesEndRef={messagesEndRef}
+        guestLimitReached={guestLimitReached}
         onOpenMemory={() => setScreen("memory")}
         onNewChat={handleNewChat}
         onLeaveGuest={handleLeaveGuest}
@@ -376,6 +424,7 @@ export default function Chat() {
         onSend={sendMessage}
         onOpenVoiceScreen={() => setVoiceScreen(true)}
         onToggleIncognito={toggleIncognito}
+        onGuestLimitSignIn={handleGuestLimitSignIn}
       />
     </>
   );
