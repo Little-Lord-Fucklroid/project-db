@@ -84,33 +84,36 @@ export default function Chat() {
 
   // --- MODIFIED: loadInitialData sets screen to loading, then after data loads, sets the final screen ---
   async function loadInitialData(showLoading = false) {
-    if (showLoading) {
-      setScreen("loading");
-    }
-
-    const data = await loadInitialChatData();
-
-    setCurrentUserId(data.currentUserId);
-    setConversationId(data.conversationId);
-    setMessages(data.messages);
-    setMemories(data.memories);
-    setBrainSummary(data.brainSummary);
-    setTodayMood(data.todayMood);
-
-    if (data.nextScreen) {
-      setScreen(data.nextScreen);
-    } else {
-      // For guests, go straight to chat
-      setScreen("chat");
-    }
-
-    setInitialDataLoaded(true);
+  if (showLoading) {
+    setScreen("loading");
   }
 
+  const data = await loadInitialChatData();
+
+  setCurrentUserId(data.currentUserId);
+  setConversationId(data.conversationId);
+  setMessages(data.messages);
+  setMemories(data.memories);
+  setBrainSummary(data.brainSummary);
+  setTodayMood(data.todayMood);
+
+  // --- Determine final screen ---
+  if (data.currentUserId) {
+    // Logged in: go to mood if needed, else chat
+    setScreen(data.nextScreen || "chat");
+  } else {
+    // Guest: go to start (welcome) screen
+    setScreen("start");
+  }
+
+  setInitialDataLoaded(true);
+}
+
   useEffect(() => {
-    // On mount, load data without showing loading (we show the start screen while it loads)
-    loadInitialData(false);
-  }, []);
+  // Show loading immediately on mount
+  setScreen("loading");
+  loadInitialData();
+}, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
