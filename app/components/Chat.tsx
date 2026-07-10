@@ -33,7 +33,6 @@ import {
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 import { signOutUser } from "@/lib/supabaseAuth";
 
-// --- CHANGED: limit reduced to 7 ---
 const GUEST_MESSAGE_LIMIT = 7;
 
 export default function Chat() {
@@ -49,7 +48,7 @@ export default function Chat() {
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   const [screen, setScreen] = useState<
-    "start" | "signin" | "chat" | "memory" | "mood"
+    "start" | "signin" | "chat" | "memory" | "mood" | "loading"
   >("start");
 
   const [incognito, setIncognito] = useState(false);
@@ -79,27 +78,38 @@ export default function Chat() {
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Compute guest message count and limit status
   const guestMessageCount = messages.filter((m) => m.role === "user").length;
   const isGuest = !currentUserId;
   const guestLimitReached = isGuest && guestMessageCount >= GUEST_MESSAGE_LIMIT;
 
-  async function loadInitialData() {
+  // --- MODIFIED: loadInitialData sets screen to loading, then after data loads, sets the final screen ---
+  async function loadInitialData(showLoading = false) {
+    if (showLoading) {
+      setScreen("loading");
+    }
+
     const data = await loadInitialChatData();
+
     setCurrentUserId(data.currentUserId);
     setConversationId(data.conversationId);
     setMessages(data.messages);
     setMemories(data.memories);
     setBrainSummary(data.brainSummary);
     setTodayMood(data.todayMood);
+
     if (data.nextScreen) {
       setScreen(data.nextScreen);
+    } else {
+      // For guests, go straight to chat
+      setScreen("chat");
     }
+
     setInitialDataLoaded(true);
   }
 
   useEffect(() => {
-    loadInitialData();
+    // On mount, load data without showing loading (we show the start screen while it loads)
+    loadInitialData(false);
   }, []);
 
   useEffect(() => {
@@ -270,9 +280,7 @@ export default function Chat() {
     });
   }
 
-  // --- CHANGED: sendMessage handles the 7th message without AI reply ---
   async function sendMessage() {
-    // If limit already reached, show modal and block
     if (guestLimitReached) {
       setShowGuestLimitModal(true);
       return;
@@ -283,17 +291,13 @@ export default function Chat() {
 
     const newCount = guestMessageCount + 1;
 
-    // If this message would reach the limit, add user message manually and stop
     if (newCount >= GUEST_MESSAGE_LIMIT) {
-      // Add the user message
       setMessages((prev) => [...prev, { role: "user", text }]);
       setMessage("");
-      // Show the sign‑in modal (no AI reply)
       setShowGuestLimitModal(true);
       return;
     }
 
-    // Otherwise, proceed normally with AI
     await sendChatMessage({
       text,
       loading,
@@ -319,6 +323,40 @@ export default function Chat() {
   }
 
   // --- RENDER LOGIC ---
+
+  // Show loading screen
+  if (screen === "loading") {
+    return (
+      <main
+        className="min-h-screen w-full flex items-center justify-center relative"
+        style={{ background: "#f7faf3" }}
+      >
+        <div className="mesh-bg" />
+        <div className="light-ray opacity-30" />
+        <div className="flex flex-col items-center z-10">
+          <div className="relative w-32 h-32">
+            <div
+              className="absolute inset-0 rounded-full pulse-orb"
+              style={{
+                background: "rgba(136,206,141,0.3)",
+                filter: "blur(40px)",
+              }}
+            />
+            <img
+              src="/mine_heart.png"
+              alt="Loading"
+              className="shimmer-heart w-full h-full object-contain relative z-1"
+              style={{ filter: "drop-shadow(0 16px 40px rgba(144,215,149,0.5))" }}
+            />
+          </div>
+          <p className="mt-6 text-sm font-bold text-[#286b35] tracking-widest uppercase">
+            Loading your vibe...
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   if (voiceScreen) {
     return <VoiceScreen onBack={() => setVoiceScreen(false)} />;
   }
@@ -336,7 +374,10 @@ export default function Chat() {
     return (
       <SignInScreen
         onBack={() => setScreen("start")}
-        onSignIn={() => loadInitialData()}
+        onSignIn={() => {
+          // When user signs in, show loading screen immediately
+          loadInitialData(true);
+        }}
         onGuest={() => setScreen("chat")}
       />
     );
@@ -370,7 +411,6 @@ export default function Chat() {
   // Main chat screen
   return (
     <>
-      {/* PIN Modal */}
       {showPinModal && (
         <IncognitoPinModal
           mode={pinModalMode}
@@ -380,7 +420,6 @@ export default function Chat() {
         />
       )}
 
-      {/* Confirmation Modal */}
       {showConfirm && (
         <ConfirmModal
           title={confirmConfig.title}
@@ -394,7 +433,6 @@ export default function Chat() {
         />
       )}
 
-      {/* Guest Limit Modal */}
       {showGuestLimitModal && (
         <ConfirmModal
           title="Guest Limit Reached"
