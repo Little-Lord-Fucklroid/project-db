@@ -13,6 +13,7 @@ type ChatShellProps = {
   memoryCount: number;
   currentUserId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  guestLimitReached?: boolean; // NEW
   onOpenMemory: () => void;
   onNewChat: () => void | Promise<void>;
   onLeaveGuest: () => void;
@@ -21,6 +22,7 @@ type ChatShellProps = {
   onSend: () => void | Promise<void>;
   onOpenVoiceScreen: () => void;
   onToggleIncognito: () => void | Promise<void>;
+  onGuestLimitSignIn?: () => void; // NEW
 };
 
 export default function ChatShell({
@@ -32,6 +34,7 @@ export default function ChatShell({
   memoryCount,
   currentUserId,
   messagesEndRef,
+  guestLimitReached = false,
   onOpenMemory,
   onNewChat,
   onLeaveGuest,
@@ -40,6 +43,7 @@ export default function ChatShell({
   onSend,
   onOpenVoiceScreen,
   onToggleIncognito,
+  onGuestLimitSignIn,
 }: ChatShellProps) {
   return (
     <main
@@ -68,8 +72,7 @@ export default function ChatShell({
         <div
           className="glass-card flex-1 w-full max-w-full overflow-x-hidden overflow-y-auto rounded-[28px] p-4 sm:rounded-[32px] sm:p-6"
           style={{
-            boxShadow:
-              "0 16px 60px rgba(40, 107, 53, 0.08)",
+            boxShadow: "0 16px 60px rgba(40, 107, 53, 0.08)",
           }}
         >
           {messages.length === 0 && (
@@ -99,10 +102,12 @@ export default function ChatShell({
           loading={loading}
           listening={listening}
           incognito={incognito}
+          guestLimitReached={guestLimitReached} // NEW
           onMessageChange={onMessageChange}
           onSend={onSend}
           onOpenVoiceScreen={onOpenVoiceScreen}
           onToggleIncognito={onToggleIncognito}
+          onGuestLimitSignIn={onGuestLimitSignIn} // NEW
         />
       </div>
     </main>

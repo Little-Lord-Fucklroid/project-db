@@ -3,10 +3,12 @@ type ChatInputProps = {
   loading: boolean;
   listening: boolean;
   incognito: boolean;
+  guestLimitReached?: boolean; // NEW
   onMessageChange: (value: string) => void;
   onSend: () => void;
   onOpenVoiceScreen: () => void;
   onToggleIncognito: () => void;
+  onGuestLimitSignIn?: () => void; // NEW
 };
 
 export default function ChatInput({
@@ -14,24 +16,30 @@ export default function ChatInput({
   loading,
   listening,
   incognito,
+  guestLimitReached = false,
   onMessageChange,
   onSend,
   onOpenVoiceScreen,
   onToggleIncognito,
+  onGuestLimitSignIn,
 }: ChatInputProps) {
+  // Determine if send is disabled
+  const isSendDisabled = loading || guestLimitReached;
+
   return (
     <div className="fixed bottom-4 left-1/2 z-50 w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2 overflow-hidden rounded-3xl border border-white/50 bg-white/45 p-3 backdrop-blur-xl">
       <div className="flex w-full flex-col gap-2">
         <input
-          className="min-w-0 w-full rounded-2xl border border-pink-100 bg-pink-50 p-3 text-black outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-pink-200"
-          placeholder="Type a message..."
+          className="min-w-0 w-full rounded-2xl border border-pink-100 bg-pink-50 p-3 text-black outline-none placeholder:text-gray-500 focus:ring-2 focus:ring-pink-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          placeholder={guestLimitReached ? "Guest limit reached – sign in to continue" : "Type a message..."}
           value={message}
           onChange={(e) => onMessageChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" && !isSendDisabled) {
               onSend();
             }
           }}
+          disabled={guestLimitReached}
         />
 
         <div className="grid w-full grid-cols-[56px_minmax(0,1fr)_78px] gap-2">
@@ -42,6 +50,7 @@ export default function ChatInput({
                 ? "bg-pink-500 text-white"
                 : "border border-pink-100 bg-white text-pink-600 hover:bg-pink-50"
             }`}
+            disabled={guestLimitReached} // also disable voice when limit reached
           >
             {listening ? "..." : "🎤"}
           </button>
@@ -55,13 +64,22 @@ export default function ChatInput({
             </span>
           </button>
 
-          <button
-            onClick={onSend}
-            className="h-12 rounded-2xl bg-pink-500 text-sm font-semibold text-white shadow-md transition hover:bg-pink-600 disabled:opacity-50"
-            disabled={loading}
-          >
-            {loading ? "..." : "Send"}
-          </button>
+          {guestLimitReached ? (
+            <button
+              onClick={onGuestLimitSignIn}
+              className="h-12 rounded-2xl bg-[#d46b94] text-sm font-bold text-white shadow-md transition hover:bg-[#c45a7e]"
+            >
+              Sign In
+            </button>
+          ) : (
+            <button
+              onClick={onSend}
+              className="h-12 rounded-2xl bg-pink-500 text-sm font-semibold text-white shadow-md transition hover:bg-pink-600 disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? "..." : "Send"}
+            </button>
+          )}
         </div>
       </div>
     </div>
