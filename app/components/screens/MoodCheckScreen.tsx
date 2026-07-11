@@ -37,9 +37,9 @@ const moods = [
     subtitle: "heated inside",
   },
   {
-    label: "numb",
-    emoji: "🌙",
-    subtitle: "feeling distant",
+    label: "flirty",
+    emoji: "😏",
+    subtitle: "feeling playful",
   },
 ];
 
@@ -195,6 +195,7 @@ export default function MoodCheckScreen({
                     setErrorMessage("");
                   }}
                   style={{
+                    position: "relative", // NEW: needed for the badge
                     padding: "16px 14px",
                     borderRadius: "22px",
                     background: isSelected
@@ -214,6 +215,28 @@ export default function MoodCheckScreen({
                     transition: "all 0.18s ease",
                   }}
                 >
+                  {/* --- NEW: Recommended badge for flirty mood --- */}
+                  {mood.label === "flirty" && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        background: "#d46b94",
+                        color: "white",
+                        fontSize: "9px",
+                        fontWeight: 700,
+                        padding: "2px 10px",
+                        borderRadius: "999px",
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        opacity: 0.85,
+                      }}
+                    >
+                      Recommended
+                    </span>
+                  )}
+
                   <div
                     style={{
                       fontSize: "26px",
