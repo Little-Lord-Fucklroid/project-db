@@ -1,5 +1,5 @@
 "use client";
-
+import { supabase } from "@/lib/supabaseClient";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import SignInScreen from "./screens/SignInScreen";
@@ -78,9 +78,23 @@ export default function Chat() {
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const guestMessageCount = messages.filter((m) => m.role === "user").length;
-  const isGuest = !currentUserId;
-  const guestLimitReached = isGuest && guestMessageCount >= GUEST_MESSAGE_LIMIT;
+const guestMessageCount = messages.filter((m) => m.role === "user").length;
+
+const guestLimitReached = (() => {
+  const result = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
+  
+  // --- DEBUG ---
+  console.log("🔍 DEBUG guestLimitReached:", {
+    initialDataLoaded,
+    currentUserId,
+    guestMessageCount,
+    limit: GUEST_MESSAGE_LIMIT,
+    result,
+  });
+  // --- END DEBUG ---
+  
+  return result;
+})();
 
   // --- MODIFIED: loadInitialData sets screen to loading, then after data loads, sets the final screen ---
   async function loadInitialData(showLoading = false) {
@@ -283,24 +297,15 @@ export default function Chat() {
     });
   }
 
-  async function sendMessage() {
-    if (guestLimitReached) {
-      setShowGuestLimitModal(true);
-      return;
-    }
+async function sendMessage() {
+  // --- HARD CHECK: if user is signed in, never limit ---
+  const { data: { user } } = await supabase.auth.getUser();
+  const isActuallySignedIn = !!user;
 
+  // If signed in, skip limit entirely
+  if (isActuallySignedIn) {
     const text = message.trim();
     if (!text) return;
-
-    const newCount = guestMessageCount + 1;
-
-    if (newCount >= GUEST_MESSAGE_LIMIT) {
-      setMessages((prev) => [...prev, { role: "user", text }]);
-      setMessage("");
-      setShowGuestLimitModal(true);
-      return;
-    }
-
     await sendChatMessage({
       text,
       loading,
@@ -318,7 +323,45 @@ export default function Chat() {
       todayMood,
       shouldSpeak: true,
     });
+    return;
   }
+
+  // Guest limit logic (only for non‑signed‑in users)
+  if (guestLimitReached) {
+    setShowGuestLimitModal(true);
+    return;
+  }
+
+  const text = message.trim();
+  if (!text) return;
+
+  const newCount = guestMessageCount + 1;
+
+  if (newCount >= GUEST_MESSAGE_LIMIT) {
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessage("");
+    setShowGuestLimitModal(true);
+    return;
+  }
+
+  await sendChatMessage({
+    text,
+    loading,
+    messages,
+    setMessages,
+    setMessage,
+    setLoading,
+    currentUserId,
+    incognito,
+    conversationId,
+    setConversationId,
+    memories,
+    setMemories,
+    brainSummary,
+    todayMood,
+    shouldSpeak: true,
+  });
+}
 
   function handleGuestLimitSignIn() {
     setShowGuestLimitModal(false);
