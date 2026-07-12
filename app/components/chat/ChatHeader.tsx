@@ -36,6 +36,11 @@ export default function ChatHeader({
     await onNewChat();
   }
 
+  async function handleLeaveGuestClick() {
+    setMenuOpen(false);
+    onLeaveGuest();
+  }
+
   async function handleSignOutClick() {
     setMenuOpen(false);
     await onSignOut();
@@ -79,8 +84,23 @@ export default function ChatHeader({
             color: "#707a6e",
             fontWeight: 600,
             margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
           }}
         >
+          <span
+            style={{
+              display: "inline-block",
+              width: "8px",
+              height: "8px",
+              borderRadius: "999px",
+              backgroundColor:
+                statusText === "Cloud" ? "#286b35" :
+                statusText === "Incognito" ? "#d46b94" :
+                "#8fb59c",
+            }}
+          />
           {statusText} mode
         </p>
       </div>
@@ -109,42 +129,6 @@ export default function ChatHeader({
           🧠 {memoryCount}{" "}
           {memoryCount === 1 ? "Memory" : "Memories"}
         </button>
-
-        {showLeaveGuestButton && (
-          <button
-            onClick={onLeaveGuest}
-            title="Leave guest mode"
-            aria-label="Leave guest mode"
-            style={{
-              width: "42px",
-              height: "42px",
-              borderRadius: "999px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "#191d18",
-              border: "1px solid rgba(255, 255, 255, 0.9)",
-              color: "white",
-              boxShadow: "0 8px 25px rgba(25, 29, 24, 0.16)",
-              cursor: "pointer",
-            }}
-          >
-            <svg
-              width="23"
-              height="23"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="white"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <path d="M16 17l5-5-5-5" />
-              <path d="M21 12H9" />
-            </svg>
-          </button>
-        )}
 
         <div style={{ position: "relative" }}>
           <button
@@ -204,6 +188,26 @@ export default function ChatHeader({
               >
                 New chat
               </button>
+
+              {/* --- NEW: Leave Guest option (only for guests) --- */}
+              {showLeaveGuestButton && (
+                <button
+                  onClick={handleLeaveGuestClick}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    borderRadius: "12px",
+                    padding: "12px 14px",
+                    fontWeight: 800,
+                    color: "#d46b94",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Leave Guest
+                </button>
+              )}
 
               {currentUserId && (
                 <button
