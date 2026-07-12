@@ -34,6 +34,77 @@ import {
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 import { signOutUser } from "@/lib/supabaseAuth";
 
+// --- ICEBREAKER PROMPTS (now 60) ---
+const ICEBREAKERS = [
+  // Original 10
+  "What's been on your mind lately?",
+  "Tell me something you're curious about right now.",
+  "How are you really feeling today?",
+  "What's something you've been overthinking?",
+  "What's a small thing that made you smile recently?",
+  "If you could change one thing about today, what would it be?",
+  "What's something you're proud of but don't talk about?",
+  "What's a question you've been asking yourself lately?",
+  "What's a memory that feels warm to you right now?",
+  "What's something you wish more people understood about you?",
+  // 50 new ones
+  "What's a feeling you've been carrying around?",
+  "What's something you're looking forward to?",
+  "What's a decision you're trying to make?",
+  "What's a conversation you wish you could have?",
+  "What's something you've been avoiding?",
+  "What's a small pleasure you enjoyed recently?",
+  "What's a thought that keeps coming back to you?",
+  "What's something you'd tell your younger self?",
+  "What's a fear that's been showing up?",
+  "What's something you're learning about yourself?",
+  "What's a moment that felt like you?",
+  "What's something you wish you could say out loud?",
+  "What's a recent moment that surprised you?",
+  "What's something you're holding onto?",
+  "What's a change you've been thinking about?",
+  "What's something you want to understand better?",
+  "What's a dream you remember vividly?",
+  "What's something you're grateful for that you don't mention?",
+  "What's a quiet moment you've had recently?",
+  "What's something you've been meaning to do?",
+  "What's a question that's hard to ask?",
+  "What's something you're hoping for?",
+  "What's a memory that makes you feel something?",
+  "What's something you've never told anyone?",
+  "What's a word that describes how you feel right now?",
+  "What's something that calms you down?",
+  "What's a place you feel safe?",
+  "What's something you'd like to let go of?",
+  "What's a moment you wish you could re‑live?",
+  "What's something you're curious about but haven't explored?",
+  "What's a feeling you don't have a name for?",
+  "What's something you've been working through?",
+  "What's a quiet truth about you?",
+  "What's something that makes you feel understood?",
+  "What's a thought that feels too big to say?",
+  "What's something you're ready to admit?",
+  "What's a small thing you're proud of?",
+  "What's a relationship that matters to you right now?",
+  "What's something you're afraid of losing?",
+  "What's a question you've been meaning to ask yourself?",
+  "What's something that feels unresolved?",
+  "What's a moment that changed you?",
+  "What's something you wish you could explain better?",
+  "What's a feeling you've been avoiding?",
+  "What's something that made you feel alive recently?",
+  "What's a story you haven't told?",
+  "What's something you need to hear right now?",
+  "What's a thought that feels like a relief?",
+  "What's something you're beginning to understand?",
+  "What's a quiet hope you have?",
+  "What's a conversation you'd like to have with yourself?",
+];
+
+function getRandomIcebreaker() {
+  return ICEBREAKERS[Math.floor(Math.random() * ICEBREAKERS.length)];
+}
+
 const GUEST_MESSAGE_LIMIT = 7;
 
 export default function Chat() {
@@ -79,59 +150,53 @@ export default function Chat() {
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-const guestMessageCount = messages.filter((m) => m.role === "user").length;
+  const guestMessageCount = messages.filter((m) => m.role === "user").length;
 
-const guestLimitReached = (() => {
-  const result = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
-  
-  // --- DEBUG ---
-  console.log("🔍 DEBUG guestLimitReached:", {
-    initialDataLoaded,
-    currentUserId,
-    guestMessageCount,
-    limit: GUEST_MESSAGE_LIMIT,
-    result,
-  });
-  // --- END DEBUG ---
-  
-  return result;
-})();
+  const guestLimitReached = (() => {
+    const result = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
+    
+    // --- DEBUG (remove later) ---
+    console.log("🔍 DEBUG guestLimitReached:", {
+      initialDataLoaded,
+      currentUserId,
+      guestMessageCount,
+      limit: GUEST_MESSAGE_LIMIT,
+      result,
+    });
+    // --- END DEBUG ---
+    
+    return result;
+  })();
 
-  // --- MODIFIED: loadInitialData sets screen to loading, then after data loads, sets the final screen ---
+  // --- loadInitialData ---
   async function loadInitialData(showLoading = false) {
-  if (showLoading) {
-    setScreen("loading");
+    if (showLoading) {
+      setScreen("loading");
+    }
+
+    const data = await loadInitialChatData();
+
+    setCurrentUserId(data.currentUserId);
+    setConversationId(data.conversationId);
+    setMessages(data.messages);
+    setMemories(data.memories);
+    setBrainSummary(data.brainSummary);
+    setTodayMood(data.todayMood);
+
+    if (data.currentUserId) {
+      setScreen(data.nextScreen || "chat");
+    } else {
+      setScreen("start");
+    }
+
+    setInitialDataLoaded(true);
   }
-
-  const data = await loadInitialChatData();
-
-  setCurrentUserId(data.currentUserId);
-  setConversationId(data.conversationId);
-  setMessages(data.messages);
-  setMemories(data.memories);
-  setBrainSummary(data.brainSummary);
-  setTodayMood(data.todayMood);
-
-  // --- Determine final screen ---
-  if (data.currentUserId) {
-    // Logged in: go to mood if needed, else chat
-    setScreen(data.nextScreen || "chat");
-  } else {
-    // Guest: go to start (welcome) screen
-    setScreen("start");
-  }
-
-  setInitialDataLoaded(true);
-}
 
   useEffect(() => {
-  // Show loading immediately on mount
-  setScreen("loading");
-  loadInitialData();
-  
-  // --- Pre-warm TTS in the background ---
-  prewarmTts();
-}, []);
+    setScreen("loading");
+    loadInitialData();
+    prewarmTts(); // pre-warm TTS on mount
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -143,7 +208,6 @@ const guestLimitReached = (() => {
     }
   }, [messages, incognito, currentUserId, initialDataLoaded]);
 
-  // Save incognito messages separately
   useEffect(() => {
     if (initialDataLoaded && incognito) {
       localStorage.setItem("incognito_messages", JSON.stringify(messages));
@@ -210,7 +274,6 @@ const guestLimitReached = (() => {
       return;
     }
 
-    // Turning incognito OFF
     if (currentUserId && conversationId) {
       const cloudMessages = await loadCloudMessages(conversationId);
       setMessages(cloudMessages);
@@ -301,15 +364,50 @@ const guestLimitReached = (() => {
     });
   }
 
-async function sendMessage() {
-  // --- HARD CHECK: if user is signed in, never limit ---
-  const { data: { user } } = await supabase.auth.getUser();
-  const isActuallySignedIn = !!user;
+  async function sendMessage() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const isActuallySignedIn = !!user;
 
-  // If signed in, skip limit entirely
-  if (isActuallySignedIn) {
+    if (isActuallySignedIn) {
+      const text = message.trim();
+      if (!text) return;
+      await sendChatMessage({
+        text,
+        loading,
+        messages,
+        setMessages,
+        setMessage,
+        setLoading,
+        currentUserId,
+        incognito,
+        conversationId,
+        setConversationId,
+        memories,
+        setMemories,
+        brainSummary,
+        todayMood,
+        shouldSpeak: true,
+      });
+      return;
+    }
+
+    if (guestLimitReached) {
+      setShowGuestLimitModal(true);
+      return;
+    }
+
     const text = message.trim();
     if (!text) return;
+
+    const newCount = guestMessageCount + 1;
+
+    if (newCount >= GUEST_MESSAGE_LIMIT) {
+      setMessages((prev) => [...prev, { role: "user", text }]);
+      setMessage("");
+      setShowGuestLimitModal(true);
+      return;
+    }
+
     await sendChatMessage({
       text,
       loading,
@@ -327,54 +425,24 @@ async function sendMessage() {
       todayMood,
       shouldSpeak: true,
     });
-    return;
   }
-
-  // Guest limit logic (only for non‑signed‑in users)
-  if (guestLimitReached) {
-    setShowGuestLimitModal(true);
-    return;
-  }
-
-  const text = message.trim();
-  if (!text) return;
-
-  const newCount = guestMessageCount + 1;
-
-  if (newCount >= GUEST_MESSAGE_LIMIT) {
-    setMessages((prev) => [...prev, { role: "user", text }]);
-    setMessage("");
-    setShowGuestLimitModal(true);
-    return;
-  }
-
-  await sendChatMessage({
-    text,
-    loading,
-    messages,
-    setMessages,
-    setMessage,
-    setLoading,
-    currentUserId,
-    incognito,
-    conversationId,
-    setConversationId,
-    memories,
-    setMemories,
-    brainSummary,
-    todayMood,
-    shouldSpeak: true,
-  });
-}
 
   function handleGuestLimitSignIn() {
     setShowGuestLimitModal(false);
     setScreen("signin");
   }
 
-  // --- RENDER LOGIC ---
+  // --- NEW: Icebreaker handler ---
+  function handleIcebreaker() {
+    const prompt = getRandomIcebreaker();
+    setMessage(prompt);
+    // Auto-send after a moment so user can see it
+    setTimeout(() => {
+      sendMessage();
+    }, 100);
+  }
 
-  // Show loading screen
+  // --- RENDER LOGIC ---
   if (screen === "loading") {
     return (
       <main
@@ -425,7 +493,6 @@ async function sendMessage() {
       <SignInScreen
         onBack={() => setScreen("start")}
         onSignIn={() => {
-          // When user signs in, show loading screen immediately
           loadInitialData(true);
         }}
         onGuest={() => setScreen("chat")}
@@ -513,6 +580,7 @@ async function sendMessage() {
         onOpenVoiceScreen={() => setVoiceScreen(true)}
         onToggleIncognito={toggleIncognito}
         onGuestLimitSignIn={handleGuestLimitSignIn}
+        onIcebreaker={handleIcebreaker} // NEW
       />
     </>
   );

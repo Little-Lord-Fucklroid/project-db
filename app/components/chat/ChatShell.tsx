@@ -13,7 +13,7 @@ type ChatShellProps = {
   memoryCount: number;
   currentUserId: string | null;
   messagesEndRef: RefObject<HTMLDivElement | null>;
-  guestLimitReached?: boolean; // NEW
+  guestLimitReached?: boolean;
   onOpenMemory: () => void;
   onNewChat: () => void | Promise<void>;
   onLeaveGuest: () => void;
@@ -22,7 +22,8 @@ type ChatShellProps = {
   onSend: () => void | Promise<void>;
   onOpenVoiceScreen: () => void;
   onToggleIncognito: () => void | Promise<void>;
-  onGuestLimitSignIn?: () => void; // NEW
+  onGuestLimitSignIn?: () => void;
+  onIcebreaker: () => void; // NEW
 };
 
 export default function ChatShell({
@@ -44,6 +45,7 @@ export default function ChatShell({
   onOpenVoiceScreen,
   onToggleIncognito,
   onGuestLimitSignIn,
+  onIcebreaker, // NEW
 }: ChatShellProps) {
   return (
     <main
@@ -53,7 +55,6 @@ export default function ChatShell({
       <div className="mesh-bg" />
       <div className="light-ray opacity-20" />
 
-      {/* fixed floating top bar */}
       <div className="fixed left-1/2 top-4 z-50 w-[calc(100%-24px)] max-w-[520px] -translate-x-1/2">
         <div className="rounded-[32px] border border-white/50 bg-white/45 backdrop-blur-xl">
           <ChatHeader
@@ -102,12 +103,13 @@ export default function ChatShell({
           loading={loading}
           listening={listening}
           incognito={incognito}
-          guestLimitReached={guestLimitReached} // NEW
+          guestLimitReached={guestLimitReached}
           onMessageChange={onMessageChange}
           onSend={onSend}
           onOpenVoiceScreen={onOpenVoiceScreen}
           onToggleIncognito={onToggleIncognito}
-          onGuestLimitSignIn={onGuestLimitSignIn} // NEW
+          onGuestLimitSignIn={onGuestLimitSignIn}
+          onIcebreaker={onIcebreaker} // NEW
         />
       </div>
     </main>

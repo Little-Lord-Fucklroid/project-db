@@ -3,12 +3,13 @@ type ChatInputProps = {
   loading: boolean;
   listening: boolean;
   incognito: boolean;
-  guestLimitReached?: boolean; // NEW
+  guestLimitReached?: boolean;
   onMessageChange: (value: string) => void;
   onSend: () => void;
   onOpenVoiceScreen: () => void;
   onToggleIncognito: () => void;
-  onGuestLimitSignIn?: () => void; // NEW
+  onGuestLimitSignIn?: () => void;
+  onIcebreaker: () => void; // NEW
 };
 
 export default function ChatInput({
@@ -22,8 +23,8 @@ export default function ChatInput({
   onOpenVoiceScreen,
   onToggleIncognito,
   onGuestLimitSignIn,
+  onIcebreaker, // NEW
 }: ChatInputProps) {
-  // Determine if send is disabled
   const isSendDisabled = loading || guestLimitReached;
 
   return (
@@ -42,7 +43,8 @@ export default function ChatInput({
           disabled={guestLimitReached}
         />
 
-        <div className="grid w-full grid-cols-[56px_minmax(0,1fr)_78px] gap-2">
+        <div className="grid w-full grid-cols-[56px_56px_minmax(0,1fr)_78px] gap-2">
+          {/* Voice button */}
           <button
             onClick={onOpenVoiceScreen}
             className={`h-12 rounded-2xl shadow-sm transition ${
@@ -50,11 +52,22 @@ export default function ChatInput({
                 ? "bg-pink-500 text-white"
                 : "border border-pink-100 bg-white text-pink-600 hover:bg-pink-50"
             }`}
-            disabled={guestLimitReached} // also disable voice when limit reached
+            disabled={guestLimitReached}
           >
             {listening ? "..." : "🎤"}
           </button>
 
+          {/* NEW: Icebreaker button */}
+          <button
+            onClick={onIcebreaker}
+            className="h-12 rounded-2xl border border-pink-100 bg-white text-pink-600 shadow-sm transition hover:bg-pink-50"
+            title="Get a conversation starter"
+            disabled={guestLimitReached}
+          >
+            💡
+          </button>
+
+          {/* Incognito toggle */}
           <button
             onClick={onToggleIncognito}
             className="min-w-0 rounded-2xl border border-gray-300 bg-white px-2 text-sm text-black shadow-sm hover:bg-gray-50"
@@ -64,6 +77,7 @@ export default function ChatInput({
             </span>
           </button>
 
+          {/* Send / Sign In button */}
           {guestLimitReached ? (
             <button
               onClick={onGuestLimitSignIn}

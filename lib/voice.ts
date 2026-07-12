@@ -12,29 +12,27 @@ function cleanTextForSpeech(text: string) {
     .replace(/_/g, "")
     .replace(/`/g, "")
     .replace(/#{1,6}\s/g, "")
-
+    // Vocal fillers — fix pronunciation
     .replace(/\b[uU]+m{2,}\b/g, "um")
     .replace(/\b[mM]{2,}\b/g, "hmm")
     .replace(/\b[hH]+m{2,}\b/g, "hmm")
     .replace(/\b[aA]+h{2,}\b/g, "ah")
     .replace(/\b[oO]+h{2,}\b/g, "oh")
     .replace(/\b[uU]+h{2,}\b/g, "uh")
-
     .replace(/\b[aA]+w{2,}\b/g, "aw")
     .replace(/\b[aA]+w+h+\b/g, "aw")
-    .replace(/\b[hH]e[hH]e+\b/g, "heh heh")
+    // --- FIX: hehe → heh heh, haha → ha ha ---
+    .replace(/\b[hH]e[hH]e+\b/g, "hee heeee")
     .replace(/\b[hH]aha+\b/g, "ha ha")
     .replace(/\b[lL]ol\b/g, "haha")
-
     .replace(/\b[oO]{2,}kay\b/g, "okay")
     .replace(/\b[yY]+e+s+\b/g, "yes")
     .replace(/\b[nN]+o+\b/g, "no")
     .replace(/\b[sS]+o+\b/g, "so")
-
+    // Punctuation
     .replace(/—/g, ", ")
     .replace(/–/g, ", ")
     .replace(/…/g, "...")
-
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -51,10 +49,7 @@ function stopCurrentAudio() {
   }
 }
 
-async function playAvaNeuralVoice(
-  text: string,
-  runId: number
-) {
+async function playAvaNeuralVoice(text: string, runId: number) {
   const response = await fetch("/api/tts", {
     method: "POST",
     headers: {
@@ -112,9 +107,7 @@ function getBrowserFallbackVoice() {
 
   for (const preferredName of preferredNames) {
     const match = voices.find((voice) =>
-      voice.name
-        .toLowerCase()
-        .includes(preferredName.toLowerCase())
+      voice.name.toLowerCase().includes(preferredName.toLowerCase())
     );
 
     if (match) {
@@ -123,16 +116,11 @@ function getBrowserFallbackVoice() {
   }
 
   return (
-    voices.find((voice) =>
-      voice.lang.toLowerCase().startsWith("en")
-    ) || null
+    voices.find((voice) => voice.lang.toLowerCase().startsWith("en")) || null
   );
 }
 
-async function playBrowserFallback(
-  text: string,
-  runId: number
-) {
+async function playBrowserFallback(text: string, runId: number) {
   if (runId !== currentSpeechRunId) {
     return;
   }
@@ -179,20 +167,17 @@ export async function speakText(text: string) {
   try {
     await playAvaNeuralVoice(cleanedText, runId);
   } catch (error) {
-    console.warn(
-      "Ava neural voice failed. Using browser fallback.",
-      error
-    );
+    console.warn("Ava neural voice failed. Using browser fallback.", error);
 
     if (runId === currentSpeechRunId) {
       await playBrowserFallback(cleanedText, runId);
     }
   }
 }
+
 // --- Pre-warm TTS (call once on app load) ---
 export async function prewarmTts() {
   try {
-    // Send a short, silent request to warm up the Edge-TTS process
     await fetch("/api/tts", {
       method: "POST",
       headers: {
@@ -200,7 +185,6 @@ export async function prewarmTts() {
       },
       body: JSON.stringify({
         text: ".",
-        // Use a special flag to avoid playing or saving
         prewarm: true,
       }),
     });
