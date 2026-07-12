@@ -87,6 +87,13 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
+    const isPrewarm = body.prewarm === true;
+
+    // If prewarm, return immediately without generating audio
+    if (isPrewarm) {
+      return new Response(null, { status: 204 });
+    }
+
     let text = String(body.text || "").trim();
 
     if (!text) {

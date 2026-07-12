@@ -1,4 +1,5 @@
 "use client";
+import { prewarmTts } from "@/lib/voice";
 import { supabase } from "@/lib/supabaseClient";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "./screens/WelcomeScreen";
@@ -127,6 +128,9 @@ const guestLimitReached = (() => {
   // Show loading immediately on mount
   setScreen("loading");
   loadInitialData();
+  
+  // --- Pre-warm TTS in the background ---
+  prewarmTts();
 }, []);
 
   useEffect(() => {

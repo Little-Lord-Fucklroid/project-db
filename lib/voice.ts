@@ -189,3 +189,22 @@ export async function speakText(text: string) {
     }
   }
 }
+// --- Pre-warm TTS (call once on app load) ---
+export async function prewarmTts() {
+  try {
+    // Send a short, silent request to warm up the Edge-TTS process
+    await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: ".",
+        // Use a special flag to avoid playing or saving
+        prewarm: true,
+      }),
+    });
+  } catch {
+    // Ignore errors — this is just a warm-up
+  }
+}
