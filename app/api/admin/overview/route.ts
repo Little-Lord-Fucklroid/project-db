@@ -18,6 +18,7 @@ type DbMessage = {
   role: string;
   text: string;
   created_at: string | null;
+  is_incognito?: boolean;
 };
 
 function getSupabaseAdmin() {
@@ -197,7 +198,7 @@ export async function GET(req: Request) {
     const { data: messages, error: messagesError } =
       await supabaseAdmin
         .from("messages")
-        .select("id,user_id,conversation_id,role,text,created_at")
+        .select("id,user_id,conversation_id,role,text,created_at,is_incognito")
         .order("created_at", { ascending: true })
         .limit(10000);
 
@@ -210,13 +211,47 @@ export async function GET(req: Request) {
 
     const safeMessages = (messages || []) as DbMessage[];
 
+    // --- Incognito data ---
+    const incognitoMessages = safeMessages.filter(
+      (message) => message.is_incognito === true
+    );
+
+    const incognitoByUser = incognitoMessages.reduce((acc, message) => {
+      acc[message.user_id] = (acc[message.user_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // --- Incognito conversations with messages (FIX: added this) ---
+    const incognitoConversations = safeConversations
+      .map((conv) => {
+        const convIncognitoMessages = safeMessages.filter(
+          (msg) => msg.conversation_id === conv.id && msg.is_incognito === true
+        );
+        if (convIncognitoMessages.length === 0) return null;
+        const user = usersData.users.find((u) => u.id === conv.user_id);
+        return {
+          conversationId: conv.id,
+          userId: conv.user_id,
+          userEmail: user?.email || "Unknown user",
+          messageCount: convIncognitoMessages.length,
+          lastMessageAt: convIncognitoMessages[convIncognitoMessages.length - 1]?.created_at || null,
+          messages: convIncognitoMessages.map((msg) => ({
+            role: msg.role,
+            text: msg.text,
+            created_at: msg.created_at,
+          })),
+        };
+      })
+      .filter(Boolean);
+
+    // --- Build users (filtering out incognito messages) ---
     const users = usersData.users.map((userItem) => {
       const userConversations = safeConversations.filter(
         (conversation) => conversation.user_id === userItem.id
       );
 
       const userMessages = safeMessages.filter(
-        (message) => message.user_id === userItem.id
+        (message) => message.user_id === userItem.id && !message.is_incognito
       );
 
       return {
@@ -226,13 +261,13 @@ export async function GET(req: Request) {
         lastSignInAt: userItem.last_sign_in_at,
         conversationCount: userConversations.length,
         messageCount: userMessages.length,
-        estimatedMinutesSpent:
-          estimateTimeSpentMinutes(userMessages),
+        estimatedMinutesSpent: estimateTimeSpentMinutes(userMessages),
         conversations: userConversations.map((conversation) => ({
           ...conversation,
           messages: safeMessages.filter(
             (message) =>
-              message.conversation_id === conversation.id
+              message.conversation_id === conversation.id &&
+              !message.is_incognito
           ),
         })),
       };
@@ -251,15 +286,15 @@ export async function GET(req: Request) {
     );
 
     const messages24h = safeMessages.filter((message) =>
-      isAfter(message.created_at, last24Hours)
+      isAfter(message.created_at, last24Hours) && !message.is_incognito
     );
 
     const messages7d = safeMessages.filter((message) =>
-      isAfter(message.created_at, last7Days)
+      isAfter(message.created_at, last7Days) && !message.is_incognito
     );
 
     const messages30d = safeMessages.filter((message) =>
-      isAfter(message.created_at, last30Days)
+      isAfter(message.created_at, last30Days) && !message.is_incognito
     );
 
     const totalEstimatedMinutesSpent = users.reduce(
@@ -269,7 +304,7 @@ export async function GET(req: Request) {
     );
 
     const dailyTraffic = buildDailyTraffic(
-      safeMessages,
+      safeMessages.filter((msg) => !msg.is_incognito),
       usersData.users
     );
 
@@ -329,6 +364,13 @@ export async function GET(req: Request) {
         dailyTraffic,
         topUsersByTime,
       },
+
+      // --- Incognito data (both counts and conversations) ---
+      incognito: {
+        totalMessages: incognitoMessages.length,
+        byUser: incognitoByUser,
+      },
+      incognitoConversations, // <-- FIX: added this
 
       users,
     });

@@ -41,6 +41,7 @@ type TopUserByTime = {
   messageCount: number;
 };
 
+// --- FIX: Single AdminOverview type with all fields ---
 type AdminOverview = {
   currentAdmin: string;
   totals: {
@@ -77,6 +78,22 @@ type AdminOverview = {
     topUsersByTime: TopUserByTime[];
   };
   users: AdminUser[];
+  incognito?: {
+    totalMessages: number;
+    byUser: Record<string, number>;
+  };
+  incognitoConversations?: {
+    conversationId: string;
+    userId: string;
+    userEmail: string;
+    messageCount: number;
+    lastMessageAt: string | null;
+    messages: {
+      role: string;
+      text: string;
+      created_at: string | null;
+    }[];
+  }[];
 };
 
 const ALPINE = "#183b32";
@@ -127,6 +144,64 @@ function getActivityScore(user: AdminUser) {
     user.messageCount * 2 +
     user.conversationCount * 5 +
     user.estimatedMinutesSpent
+  );
+}
+
+// --- Component for individual incognito conversation (manages its own state) ---
+function IncognitoConversationItem({
+  conversation,
+}: {
+  conversation: NonNullable<AdminOverview["incognitoConversations"]>[0];
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="rounded-[32px] border border-[#183b32]/10 bg-white/70 p-4 transition hover:bg-white/90">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-base font-black tracking-[-0.03em]">
+            {conversation.userEmail}
+          </p>
+          <p className="text-sm text-[#183b32]/55">
+            {conversation.messageCount} messages · Last: {formatDate(conversation.lastMessageAt)}
+          </p>
+        </div>
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="rounded-full bg-[#d46b94] px-4 py-2 text-xs font-black text-white transition hover:bg-[#c45a7e]"
+        >
+          {expanded ? "Hide" : "View"}
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="mt-4 max-h-96 space-y-2 overflow-y-auto rounded-[24px] border border-[#183b32]/10 bg-white/55 p-3">
+          {conversation.messages.length === 0 && (
+            <p className="text-sm text-[#183b32]/50">No messages in this conversation.</p>
+          )}
+          {conversation.messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`rounded-[20px] p-3 ${
+                msg.role === "user" ? "bg-[#fde8f1]" : "bg-[#e7f1ea]"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#183b32]/45">
+                  {msg.role}
+                </p>
+                <p className="text-xs text-[#183b32]/35">
+                  {formatDate(msg.created_at)}
+                </p>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[#183b32]/85">
+                {msg.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -455,6 +530,74 @@ export default function AdminPage() {
             ))}
           </div>
         </section>
+
+        {/* Incognito Activity Section */}
+        <section className="mt-5 rounded-[48px] border border-[#183b32]/10 bg-white/60 p-6 shadow-[0_30px_100px_rgba(24,59,50,0.10)] backdrop-blur-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.4em] text-[#d46b94]">
+                Privacy Layer
+              </p>
+              <h2 className="mt-3 text-4xl font-black leading-none tracking-[-0.07em] sm:text-5xl">
+                Incognito Activity
+              </h2>
+            </div>
+            <span className="rounded-full bg-[#d46b94] px-4 py-2 text-sm font-black text-white">
+              {overview.incognito?.totalMessages || 0} messages
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {overview.incognito?.byUser && Object.entries(overview.incognito.byUser).length > 0 ? (
+              Object.entries(overview.incognito.byUser).map(([userId, count]) => {
+                const user = overview.users.find((u) => u.id === userId);
+                return (
+                  <div
+                    key={userId}
+                    className="rounded-[32px] border border-[#183b32]/10 bg-white/70 p-4"
+                  >
+                    <p className="truncate text-sm font-black">
+                      {user?.email || userId}
+                    </p>
+                    <p className="mt-2 text-2xl font-black text-[#d46b94]">
+                      {count}
+                    </p>
+                    <p className="text-xs text-[#183b32]/50">incognito messages</p>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="col-span-full rounded-[32px] border border-[#183b32]/10 bg-white/70 p-4 text-center text-sm text-[#183b32]/50">
+                No incognito activity yet.
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Incognito Conversations Table */}
+        {overview.incognitoConversations && overview.incognitoConversations.length > 0 && (
+          <section className="mt-5 rounded-[48px] border border-[#183b32]/10 bg-white/60 p-6 shadow-[0_30px_100px_rgba(24,59,50,0.10)] backdrop-blur-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.4em] text-[#d46b94]">
+                  Private Threads
+                </p>
+                <h2 className="mt-3 text-4xl font-black leading-none tracking-[-0.07em] sm:text-5xl">
+                  Incognito Conversations
+                </h2>
+              </div>
+              <span className="rounded-full bg-[#d46b94] px-4 py-2 text-sm font-black text-white">
+                {overview.incognitoConversations.length} conversations
+              </span>
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {overview.incognitoConversations.map((conv) => (
+                <IncognitoConversationItem key={conv.conversationId} conversation={conv} />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-5 grid gap-5 xl:grid-cols-[430px_1fr]">
           <UserDirectory

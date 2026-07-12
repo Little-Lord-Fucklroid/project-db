@@ -130,20 +130,21 @@ export async function sendChatMessage({
   setMessage("");
   setLoading(true);
 
-  if (currentUserId && !incognito && activeConversationId) {
-    try {
-      await saveCloudMessage(
-        activeConversationId,
-        "user",
-        userMessage
-      );
-    } catch (error) {
-      console.error(
-        "Cloud user message save failed:",
-        error
-      );
-    }
+if (currentUserId && activeConversationId) {
+  try {
+    await saveCloudMessage(
+      activeConversationId,
+      "user",
+      userMessage,
+      incognito  // <-- NEW: pass the incognito flag
+    );
+  } catch (error) {
+    console.error(
+      "Cloud user message save failed:",
+      error
+    );
   }
+}
 
   const voiceReadyPromise = preloadVoices();
 
@@ -248,20 +249,21 @@ export async function sendChatMessage({
 
     const reply = data.reply || "No response received.";
 
-    if (currentUserId && !incognito && activeConversationId) {
-      try {
-        await saveCloudMessage(
-          activeConversationId,
-          "ai",
-          reply
-        );
-      } catch (error) {
-        console.error(
-          "Cloud AI message save failed:",
-          error
-        );
-      }
-    }
+   if (currentUserId && activeConversationId) {
+  try {
+    await saveCloudMessage(
+      activeConversationId,
+      "ai",
+      reply,
+      incognito  // <-- NEW: pass the incognito flag
+    );
+  } catch (error) {
+    console.error(
+      "Cloud AI message save failed:",
+      error
+    );
+  }
+}
 
     await Promise.all([
       voiceReadyPromise,

@@ -60,7 +60,8 @@ export async function getOrCreateConversation() {
 export async function saveCloudMessage(
   conversationId: string,
   role: "user" | "ai",
-  text: string
+  text: string,
+  isIncognito: boolean = false  // NEW
 ) {
   const userId = await getUserId();
 
@@ -73,6 +74,7 @@ export async function saveCloudMessage(
     user_id: userId,
     role,
     text,
+    is_incognito: isIncognito,  // NEW
   });
 
   if (error) {
