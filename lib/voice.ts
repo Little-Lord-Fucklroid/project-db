@@ -49,45 +49,61 @@ function stopCurrentAudio() {
   }
 }
 
-async function playAvaNeuralVoice(text: string, runId: number) {
-  const response = await fetch("/api/tts", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      text,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Ava neural voice failed.");
-  }
-
-  if (runId !== currentSpeechRunId) {
-    return;
-  }
-
-  const audioBlob = await response.blob();
-  const audioUrl = URL.createObjectURL(audioBlob);
+async function playAvaNeuralVoice(text: string, runId: number, retryCount = 0) {
+  const maxRetries = 2;
+  const delay = 1000 * Math.pow(2, retryCount); // 1s, 2s
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      if (runId !== currentSpeechRunId) {
-        resolve();
-        return;
-      }
-
-      const audio = new Audio(audioUrl);
-      currentAudio = audio;
-
-      audio.onended = () => resolve();
-      audio.onerror = () => reject();
-
-      audio.play().catch(reject);
+    const response = await fetch("/api/tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+      }),
     });
-  } finally {
-    URL.revokeObjectURL(audioUrl);
+
+    if (!response.ok) {
+      throw new Error("Ava neural voice failed.");
+    }
+
+    if (runId !== currentSpeechRunId) {
+      return;
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        if (runId !== currentSpeechRunId) {
+          resolve();
+          return;
+        }
+
+        const audio = new Audio(audioUrl);
+        currentAudio = audio;
+
+        audio.onended = () => resolve();
+        audio.onerror = () => reject();
+
+        audio.play().catch(reject);
+      });
+    } finally {
+      URL.revokeObjectURL(audioUrl);
+    }
+  } catch (error) {
+    // Retry if we haven't exceeded max retries
+    if (retryCount < maxRetries) {
+      console.warn(`TTS attempt ${retryCount + 1} failed, retrying in ${delay}ms...`, error);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return playAvaNeuralVoice(text, runId, retryCount + 1);
+    }
+    
+    // All retries failed — throw to trigger browser fallback
+    console.warn("All TTS retries exhausted.");
+    throw error;
   }
 }
 
