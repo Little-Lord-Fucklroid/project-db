@@ -180,11 +180,14 @@ export default function Chat() {
     setBrainSummary(data.brainSummary);
     setTodayMood(data.todayMood);
 
-    if (data.currentUserId) {
-      setScreen(data.nextScreen || "chat");
-    } else {
-      setScreen("start");
-    }
+     // --- ALWAYS SHOW MOOD CHECK ON APP LOAD FOR SIGNED‑IN USERS ---
+  if (data.currentUserId) {
+    // Show mood check every time the app loads (signed‑in)
+    setScreen("mood");
+  } else {
+    // Guests go straight to start (welcome) screen
+    setScreen("start");
+  }
 
     setInitialDataLoaded(true);
   }
@@ -441,12 +444,9 @@ export default function Chat() {
 
   // --- Icebreaker handler ---
   function handleIcebreaker() {
-    const prompt = getRandomIcebreaker();
-    setMessage(prompt);
-    setTimeout(() => {
-      sendMessage();
-    }, 100);
-  }
+  const prompt = getRandomIcebreaker();
+  setMessage(prompt);
+}
 
   function handleIncognitoGuestSignIn() {
     setShowIncognitoGuestModal(false);
