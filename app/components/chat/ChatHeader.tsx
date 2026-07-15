@@ -173,24 +173,24 @@ export default function ChatHeader({
               }}
             >
               {/* Only show New chat for signed-in users */}
-              {currentUserId && (
-                <button
-                  onClick={handleNewChatClick}
-                  style={{
-                    width: "100%",
-                    textAlign: "left",
-                    borderRadius: "12px",
-                    padding: "12px 14px",
-                    fontWeight: 800,
-                    color: "#191d18",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                >
-                  New chat
-                </button>
-              )}
+              {currentUserId && !incognito && (
+  <button
+    onClick={handleNewChatClick}
+    style={{
+      width: "100%",
+      textAlign: "left",
+      borderRadius: "12px",
+      padding: "12px 14px",
+      fontWeight: 800,
+      color: "#191d18",
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+    }}
+  >
+    New chat
+  </button>
+)}
 
               {showLeaveGuestButton && (
                 <button

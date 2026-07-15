@@ -371,49 +371,12 @@ export default function Chat() {
   }
 
   async function sendMessage() {
-    const { data: { user } } = await supabase.auth.getUser();
-    const isActuallySignedIn = !!user;
+  // Use currentUserId from state (instant, no network call)
+  const isActuallySignedIn = !!currentUserId;
 
-    if (isActuallySignedIn) {
-      const text = message.trim();
-      if (!text) return;
-      await sendChatMessage({
-        text,
-        loading,
-        messages,
-        setMessages,
-        setMessage,
-        setLoading,
-        currentUserId,
-        incognito,
-        conversationId,
-        setConversationId,
-        memories,
-        setMemories,
-        brainSummary,
-        todayMood,
-        shouldSpeak: true,
-      });
-      return;
-    }
-
-    if (guestLimitReached) {
-      setShowGuestLimitModal(true);
-      return;
-    }
-
+  if (isActuallySignedIn) {
     const text = message.trim();
     if (!text) return;
-
-    const newCount = guestMessageCount + 1;
-
-    if (newCount >= GUEST_MESSAGE_LIMIT) {
-      setMessages((prev) => [...prev, { role: "user", text }]);
-      setMessage("");
-      setShowGuestLimitModal(true);
-      return;
-    }
-
     await sendChatMessage({
       text,
       loading,
@@ -431,7 +394,45 @@ export default function Chat() {
       todayMood,
       shouldSpeak: true,
     });
+    return;
   }
+
+  // Guest limit logic (only for non‑signed‑in users)
+  if (guestLimitReached) {
+    setShowGuestLimitModal(true);
+    return;
+  }
+
+  const text = message.trim();
+  if (!text) return;
+
+  const newCount = guestMessageCount + 1;
+
+  if (newCount >= GUEST_MESSAGE_LIMIT) {
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setMessage("");
+    setShowGuestLimitModal(true);
+    return;
+  }
+
+  await sendChatMessage({
+    text,
+    loading,
+    messages,
+    setMessages,
+    setMessage,
+    setLoading,
+    currentUserId,
+    incognito,
+    conversationId,
+    setConversationId,
+    memories,
+    setMemories,
+    brainSummary,
+    todayMood,
+    shouldSpeak: true,
+  });
+}
 
   function handleGuestLimitSignIn() {
     setShowGuestLimitModal(false);

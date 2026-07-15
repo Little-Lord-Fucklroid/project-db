@@ -91,7 +91,8 @@ export async function saveCloudMessage(
 }
 
 export async function loadCloudMessages(
-  conversationId: string
+  conversationId: string,
+  options?: { includeIncognito?: boolean }
 ): Promise<CloudMessage[]> {
   const userId = await getUserId();
 
@@ -99,12 +100,22 @@ export async function loadCloudMessages(
     return [];
   }
 
-  const { data, error } = await supabase
+  // Default to exclude incognito messages
+  const includeIncognito = options?.includeIncognito ?? false;
+
+  let query = supabase
     .from("messages")
     .select("role, text")
     .eq("conversation_id", conversationId)
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
+
+  // Filter out incognito messages unless explicitly asked to include them
+  if (!includeIncognito) {
+    query = query.eq("is_incognito", false);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);
