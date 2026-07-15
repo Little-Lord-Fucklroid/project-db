@@ -34,9 +34,8 @@ import {
 import { startSpeechRecognition } from "@/lib/speechRecognition";
 import { signOutUser } from "@/lib/supabaseAuth";
 
-// --- ICEBREAKER PROMPTS (now 60) ---
+// --- ICEBREAKER PROMPTS (60) ---
 const ICEBREAKERS = [
-  // Original 10
   "What's been on your mind lately?",
   "Tell me something you're curious about right now.",
   "How are you really feeling today?",
@@ -47,7 +46,6 @@ const ICEBREAKERS = [
   "What's a question you've been asking yourself lately?",
   "What's a memory that feels warm to you right now?",
   "What's something you wish more people understood about you?",
-  // 50 new ones
   "What's a feeling you've been carrying around?",
   "What's something you're looking forward to?",
   "What's a decision you're trying to make?",
@@ -147,6 +145,9 @@ export default function Chat() {
   // Guest limit modal state
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
 
+  // --- NEW: Incognito guest modal state ---
+  const [showIncognitoGuestModal, setShowIncognitoGuestModal] = useState(false);
+
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -154,8 +155,6 @@ export default function Chat() {
 
   const guestLimitReached = (() => {
     const result = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
-    
-    // --- DEBUG (remove later) ---
     console.log("🔍 DEBUG guestLimitReached:", {
       initialDataLoaded,
       currentUserId,
@@ -163,8 +162,6 @@ export default function Chat() {
       limit: GUEST_MESSAGE_LIMIT,
       result,
     });
-    // --- END DEBUG ---
-    
     return result;
   })();
 
@@ -195,7 +192,7 @@ export default function Chat() {
   useEffect(() => {
     setScreen("loading");
     loadInitialData();
-    prewarmTts(); // pre-warm TTS on mount
+    prewarmTts();
   }, []);
 
   useEffect(() => {
@@ -258,7 +255,15 @@ export default function Chat() {
     setPinError("");
   }
 
+  // --- CORRECTED: toggleIncognito uses currentUserId to prevent guest incognito ---
   async function toggleIncognito() {
+    // If user is not signed in (guest), show the modal and return
+    if (!currentUserId) {
+      setShowIncognitoGuestModal(true);
+      return;
+    }
+
+    // Signed‑in user – proceed with normal incognito logic
     const savedPin = getIncognitoPin();
 
     if (!incognito) {
@@ -274,6 +279,7 @@ export default function Chat() {
       return;
     }
 
+    // Turning incognito OFF
     if (currentUserId && conversationId) {
       const cloudMessages = await loadCloudMessages(conversationId);
       setMessages(cloudMessages);
@@ -432,14 +438,18 @@ export default function Chat() {
     setScreen("signin");
   }
 
-  // --- NEW: Icebreaker handler ---
+  // --- Icebreaker handler ---
   function handleIcebreaker() {
     const prompt = getRandomIcebreaker();
     setMessage(prompt);
-    // Auto-send after a moment so user can see it
     setTimeout(() => {
       sendMessage();
     }, 100);
+  }
+
+  function handleIncognitoGuestSignIn() {
+    setShowIncognitoGuestModal(false);
+    setScreen("signin");
   }
 
   // --- RENDER LOGIC ---
@@ -561,6 +571,17 @@ export default function Chat() {
         />
       )}
 
+      {showIncognitoGuestModal && (
+        <ConfirmModal
+          title="Sign In Required"
+          message="Incognito mode is available for signed-in users. Please sign in to use this feature."
+          confirmLabel="Sign In"
+          cancelLabel="Cancel"
+          onConfirm={handleIncognitoGuestSignIn}
+          onCancel={() => setShowIncognitoGuestModal(false)}
+        />
+      )}
+
       <ChatShell
         messages={messages}
         loading={loading}
@@ -580,7 +601,7 @@ export default function Chat() {
         onOpenVoiceScreen={() => setVoiceScreen(true)}
         onToggleIncognito={toggleIncognito}
         onGuestLimitSignIn={handleGuestLimitSignIn}
-        onIcebreaker={handleIcebreaker} // NEW
+        onIcebreaker={handleIcebreaker}
       />
     </>
   );

@@ -172,24 +172,26 @@ export default function ChatHeader({
                 zIndex: 200,
               }}
             >
-              <button
-                onClick={handleNewChatClick}
-                style={{
-                  width: "100%",
-                  textAlign: "left",
-                  borderRadius: "12px",
-                  padding: "12px 14px",
-                  fontWeight: 800,
-                  color: "#191d18",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                New chat
-              </button>
+              {/* Only show New chat for signed-in users */}
+              {currentUserId && (
+                <button
+                  onClick={handleNewChatClick}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    borderRadius: "12px",
+                    padding: "12px 14px",
+                    fontWeight: 800,
+                    color: "#191d18",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  New chat
+                </button>
+              )}
 
-              {/* --- NEW: Leave Guest option (only for guests) --- */}
               {showLeaveGuestButton && (
                 <button
                   onClick={handleLeaveGuestClick}
