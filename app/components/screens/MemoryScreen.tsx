@@ -98,47 +98,31 @@ export default function MemoryScreen({
           )}
 
           <div className="space-y-3 pt-3">
-  {memories.length > 0 && (
-    <button
-      onClick={() => {
-        const confirmed = confirm(
-          "Clear all memories and current chat history?"
-        );
+            {memories.length > 0 && (
+              <button
+                onClick={onClearMemories} // no confirm() here – controller handles it
+                className="w-full rounded-2xl py-4 font-bold"
+                style={{
+                  background: "#286b35",
+                  color: "white",
+                }}
+              >
+                Clear All Memories
+              </button>
+            )}
 
-        if (confirmed) {
-  onClearMemories();
-}
-      }}
-      className="w-full rounded-2xl py-4 font-bold"
-      style={{
-        background: "#286b35",
-        color: "white",
-      }}
-    >
-      Clear All Memories
-    </button>
-  )}
-
-  <button
-    onClick={() => {
-      const confirmed = confirm(
-        "Clear current chat history?"
-      );
-
-      if (confirmed) {
-  onClearChatHistory();
-}
-    }}
-    className="w-full rounded-2xl py-4 font-bold"
-    style={{
-      background: "rgba(255,255,255,0.7)",
-      color: "#b42318",
-      border: "1px solid rgba(180,35,24,0.15)",
-    }}
-  >
-    Clear Chat History
-  </button>
-</div>
+            <button
+              onClick={onClearChatHistory} // no confirm() here – controller handles it
+              className="w-full rounded-2xl py-4 font-bold"
+              style={{
+                background: "rgba(255,255,255,0.7)",
+                color: "#b42318",
+                border: "1px solid rgba(180,35,24,0.15)",
+              }}
+            >
+              Clear Chat History
+            </button>
+          </div>
         </div>
       </div>
     </main>

@@ -1,5 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react"; // <-- FIX: added import
 import MemoryScreen from "../screens/MemoryScreen";
+import ConfirmModal from "../ConfirmModal";
 
 import { saveMessages } from "@/lib/chatStorage";
 
@@ -36,63 +38,111 @@ export default function MemoryScreenController({
   conversationId,
   onBack,
 }: MemoryScreenControllerProps) {
-  return (
-    <MemoryScreen
-      memories={memories}
-      onBack={onBack}
-      onDelete={async (id) => {
+  // --- Modal state ---
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+  // --- Delete a single memory ---
+  function handleDeleteMemory(id: string) {
+    setModalConfig({
+      title: "Delete Memory?",
+      message: "This memory will be removed from your saved list.",
+      onConfirm: async () => {
+        setModalOpen(false);
         if (currentUserId && !incognito) {
           await deleteCloudMemory(id);
-
           setMemories((prev) =>
             prev.filter((memory) => memory.id !== id)
           );
         } else {
           const result = deleteMemory(id);
-
           setMemories(result.updatedMemories);
         }
 
+        // Optional: also clear chat history
         const shouldClearChat = confirm(
           "Memory deleted. This fact may still appear in your chat history. Clear chat history too?"
         );
-
         if (shouldClearChat) {
           setMessages([]);
-
-          if (
-            currentUserId &&
-            !incognito &&
-            conversationId
-          ) {
+          if (currentUserId && !incognito && conversationId) {
             await clearCloudMessages(conversationId);
           } else {
             saveMessages([]);
           }
         }
-      }}
-      onClearMemories={async () => {
-        setMemories([]);
+      },
+    });
+    setModalOpen(true);
+  }
 
+  // --- Clear all memories ---
+  function handleClearMemories() {
+    setModalConfig({
+      title: "Clear All Memories?",
+      message: "All saved memories will be permanently removed. This cannot be undone.",
+      onConfirm: async () => {
+        setModalOpen(false);
+        setMemories([]);
         if (currentUserId && !incognito) {
           await clearCloudMemories();
         } else {
           clearMemories();
         }
-      }}
-      onClearChatHistory={async () => {
-        setMessages([]);
+      },
+    });
+    setModalOpen(true);
+  }
 
-        if (
-          currentUserId &&
-          !incognito &&
-          conversationId
-        ) {
+  // --- Clear chat history ---
+  function handleClearChatHistory() {
+    setModalConfig({
+      title: "Clear Chat History?",
+      message: "All messages in this conversation will be removed. This cannot be undone.",
+      onConfirm: async () => {
+        setModalOpen(false);
+        setMessages([]);
+        if (currentUserId && !incognito && conversationId) {
           await clearCloudMessages(conversationId);
         } else {
           saveMessages([]);
         }
-      }}
-    />
+      },
+    });
+    setModalOpen(true);
+  }
+
+  return (
+    <>
+      <MemoryScreen
+        memories={memories}
+        onBack={onBack}
+        onDelete={handleDeleteMemory}
+        onClearMemories={handleClearMemories}
+        onClearChatHistory={handleClearChatHistory}
+      />
+
+      {/* Custom confirmation modal */}
+      {modalOpen && (
+        <ConfirmModal
+          title={modalConfig.title}
+          message={modalConfig.message}
+          confirmLabel="Yes, delete"
+          cancelLabel="Cancel"
+          onConfirm={() => {
+            modalConfig.onConfirm();
+          }}
+          onCancel={() => setModalOpen(false)}
+        />
+      )}
+    </>
   );
 }
