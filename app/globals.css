@@ -153,3 +153,105 @@ body {
   animation: wave-bar 1s ease-in-out infinite;
   transform-origin: bottom;
 }
+/* ─── Dark Sign‑in Animations ─── */
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spin {
+  from { --angle: 0deg; }
+  to { --angle: 360deg; }
+}
+
+.rotating-border {
+  position: absolute;
+  inset: -1.5px;
+  border-radius: 29px;
+  background: conic-gradient(
+    from var(--angle, 0deg),
+    rgba(125,212,171,0) 0deg,
+    rgba(125,212,171,0.7) 60deg,
+    rgba(200,150,230,0.6) 120deg,
+    rgba(240,160,188,0.7) 180deg,
+    rgba(240,160,188,0) 240deg,
+    rgba(125,212,171,0) 360deg
+  );
+  animation: spin 6s linear infinite;
+  z-index: 0;
+}
+
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(2deg); }
+  66% { transform: translateY(-5px) rotate(-1.5deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  will-change: transform;
+}
+.blob-1 {
+  width: 60vw; height: 55vh;
+  top: -15%; left: -15%;
+  background: radial-gradient(circle, rgba(125,212,171,0.28) 0%, rgba(80,180,140,0.08) 60%, transparent 100%);
+  animation: b1 9s ease-in-out infinite;
+}
+.blob-2 {
+  width: 55vw; height: 60vh;
+  bottom: -20%; right: -10%;
+  background: radial-gradient(circle, rgba(240,160,188,0.25) 0%, rgba(200,120,160,0.07) 60%, transparent 100%);
+  animation: b2 11s ease-in-out infinite;
+}
+.blob-3 {
+  width: 35vw; height: 35vh;
+  top: 40%; left: 50%;
+  background: radial-gradient(circle, rgba(180,140,230,0.18) 0%, transparent 70%);
+  animation: b3 14s ease-in-out infinite;
+}
+.blob-4 {
+  width: 25vw; height: 25vh;
+  top: 10%; right: 10%;
+  background: radial-gradient(circle, rgba(125,212,171,0.14) 0%, transparent 70%);
+  animation: b4 7s ease-in-out infinite;
+  filter: blur(50px);
+}
+.blob-5 {
+  width: 30vw; height: 30vh;
+  bottom: 10%; left: 20%;
+  background: radial-gradient(circle, rgba(240,160,188,0.12) 0%, transparent 70%);
+  animation: b5 13s ease-in-out infinite;
+  filter: blur(55px);
+}
+
+@keyframes b1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(5%,8%) scale(1.06); }
+  66% { transform: translate(-3%,4%) scale(0.94); }
+}
+@keyframes b2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33% { transform: translate(-6%,-5%) scale(1.08); }
+  66% { transform: translate(4%,-3%) scale(0.96); }
+}
+@keyframes b3 {
+  0%,100% { transform: translate(-50%,-50%) scale(1); }
+  50% { transform: translate(-55%,-42%) scale(1.15); }
+}
+@keyframes b4 {
+  0%,100% { transform: scale(1) translate(0,0); }
+  50% { transform: scale(1.2) translate(-5%, 8%); }
+}
+@keyframes b5 {
+  0%,100% { transform: scale(1) translate(0,0); }
+  50% { transform: scale(0.85) translate(8%,-6%); }
+}
