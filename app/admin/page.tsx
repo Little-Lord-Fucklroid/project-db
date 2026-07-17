@@ -755,22 +755,21 @@ function HeroSection({ overview }: { overview: AdminOverview }) {
           </p>
 
           <h1 className="mt-6 max-w-5xl text-6xl font-black leading-[0.84] tracking-[-0.09em] sm:text-8xl lg:text-9xl">
-            Million
+            Vibe
             <br />
-            dollar
+            control
             <br />
-            control.
+            room.
           </h1>
 
           <p className="mt-7 max-w-2xl text-base leading-7 text-[#183b32]/58 sm:text-lg">
-            A cinematic dashboard for monitoring user growth,
-            engagement, conversations, and momentum inside Vibe.
+            
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
             <HeroPill label="Live admin overview" />
-            <HeroPill label="No backend changes" />
-            <HeroPill label="Luxury UI layer" />
+            <HeroPill label="Real-time analytics" />
+            <HeroPill label="Data visualization" />
           </div>
         </div>
 
