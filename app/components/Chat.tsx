@@ -125,6 +125,9 @@ export default function Chat() {
   const [listening, setListening] = useState(false);
   const [voiceScreen, setVoiceScreen] = useState(false);
 
+  // --- NEW: Dark mode state ---
+  const [darkMode, setDarkMode] = useState(false);
+
   // PIN modal state
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<"create" | "unlock">("create");
@@ -180,14 +183,14 @@ export default function Chat() {
     setBrainSummary(data.brainSummary);
     setTodayMood(data.todayMood);
 
-     // --- ALWAYS SHOW MOOD CHECK ON APP LOAD FOR SIGNED‑IN USERS ---
-  if (data.currentUserId) {
-    // Show mood check every time the app loads (signed‑in)
-    setScreen("mood");
-  } else {
-    // Guests go straight to start (welcome) screen
-    setScreen("start");
-  }
+    // --- ALWAYS SHOW MOOD CHECK ON APP LOAD FOR SIGNED‑IN USERS ---
+    if (data.currentUserId) {
+      // Show mood check every time the app loads (signed‑in)
+      setScreen("mood");
+    } else {
+      // Guests go straight to start (welcome) screen
+      setScreen("start");
+    }
 
     setInitialDataLoaded(true);
   }
@@ -374,12 +377,50 @@ export default function Chat() {
   }
 
   async function sendMessage() {
-  // Use currentUserId from state (instant, no network call)
-  const isActuallySignedIn = !!currentUserId;
+    // Use currentUserId from state (instant, no network call)
+    const isActuallySignedIn = !!currentUserId;
 
-  if (isActuallySignedIn) {
+    if (isActuallySignedIn) {
+      const text = message.trim();
+      if (!text) return;
+      await sendChatMessage({
+        text,
+        loading,
+        messages,
+        setMessages,
+        setMessage,
+        setLoading,
+        currentUserId,
+        incognito,
+        conversationId,
+        setConversationId,
+        memories,
+        setMemories,
+        brainSummary,
+        todayMood,
+        shouldSpeak: true,
+      });
+      return;
+    }
+
+    // Guest limit logic (only for non‑signed‑in users)
+    if (guestLimitReached) {
+      setShowGuestLimitModal(true);
+      return;
+    }
+
     const text = message.trim();
     if (!text) return;
+
+    const newCount = guestMessageCount + 1;
+
+    if (newCount >= GUEST_MESSAGE_LIMIT) {
+      setMessages((prev) => [...prev, { role: "user", text }]);
+      setMessage("");
+      setShowGuestLimitModal(true);
+      return;
+    }
+
     await sendChatMessage({
       text,
       loading,
@@ -397,45 +438,7 @@ export default function Chat() {
       todayMood,
       shouldSpeak: true,
     });
-    return;
   }
-
-  // Guest limit logic (only for non‑signed‑in users)
-  if (guestLimitReached) {
-    setShowGuestLimitModal(true);
-    return;
-  }
-
-  const text = message.trim();
-  if (!text) return;
-
-  const newCount = guestMessageCount + 1;
-
-  if (newCount >= GUEST_MESSAGE_LIMIT) {
-    setMessages((prev) => [...prev, { role: "user", text }]);
-    setMessage("");
-    setShowGuestLimitModal(true);
-    return;
-  }
-
-  await sendChatMessage({
-    text,
-    loading,
-    messages,
-    setMessages,
-    setMessage,
-    setLoading,
-    currentUserId,
-    incognito,
-    conversationId,
-    setConversationId,
-    memories,
-    setMemories,
-    brainSummary,
-    todayMood,
-    shouldSpeak: true,
-  });
-}
 
   function handleGuestLimitSignIn() {
     setShowGuestLimitModal(false);
@@ -444,13 +447,18 @@ export default function Chat() {
 
   // --- Icebreaker handler ---
   function handleIcebreaker() {
-  const prompt = getRandomIcebreaker();
-  setMessage(prompt);
-}
+    const prompt = getRandomIcebreaker();
+    setMessage(prompt);
+  }
 
   function handleIncognitoGuestSignIn() {
     setShowIncognitoGuestModal(false);
     setScreen("signin");
+  }
+
+  // --- Dark mode toggle ---
+  function toggleDarkMode() {
+    setDarkMode(!darkMode);
   }
 
   // --- RENDER LOGIC ---
@@ -603,6 +611,8 @@ export default function Chat() {
         onToggleIncognito={toggleIncognito}
         onGuestLimitSignIn={handleGuestLimitSignIn}
         onIcebreaker={handleIcebreaker}
+        darkMode={darkMode}
+        onToggleDarkMode={toggleDarkMode}
       />
     </>
   );

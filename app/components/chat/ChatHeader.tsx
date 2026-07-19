@@ -10,6 +10,8 @@ type ChatHeaderProps = {
   currentUserId: string | null;
   incognito: boolean;
   onSignOut: () => void | Promise<void>;
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
 };
 
 export default function ChatHeader({
@@ -20,6 +22,8 @@ export default function ChatHeader({
   currentUserId,
   incognito,
   onSignOut,
+  darkMode = false,
+  onToggleDarkMode,
 }: ChatHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -55,9 +59,15 @@ export default function ChatHeader({
         marginBottom: "18px",
         padding: "16px 20px",
         borderRadius: "28px",
-        background: "rgba(255, 255, 255, 0.58)",
-        border: "1px solid rgba(255, 255, 255, 0.78)",
-        boxShadow: "0 18px 60px rgba(40, 107, 53, 0.12)",
+        background: darkMode
+          ? "rgba(255, 255, 255, 0.08)"
+          : "rgba(255, 255, 255, 0.58)",
+        border: darkMode
+          ? "1px solid rgba(255, 255, 255, 0.1)"
+          : "1px solid rgba(255, 255, 255, 0.78)",
+        boxShadow: darkMode
+          ? "0 18px 60px rgba(0,0,0,0.4)"
+          : "0 18px 60px rgba(40, 107, 53, 0.12)",
         backdropFilter: "blur(22px)",
         WebkitBackdropFilter: "blur(22px)",
         display: "flex",
@@ -70,7 +80,7 @@ export default function ChatHeader({
           style={{
             fontSize: "28px",
             fontWeight: 900,
-            color: "#191d18",
+            color: darkMode ? "#fff" : "#191d18",
             letterSpacing: "-0.04em",
             margin: 0,
           }}
@@ -81,7 +91,7 @@ export default function ChatHeader({
         <p
           style={{
             fontSize: "13px",
-            color: "#707a6e",
+            color: darkMode ? "rgba(255,255,255,0.5)" : "#707a6e",
             fontWeight: 600,
             margin: 0,
             display: "flex",
@@ -96,7 +106,7 @@ export default function ChatHeader({
               height: "8px",
               borderRadius: "999px",
               backgroundColor:
-                statusText === "Cloud" ? "#286b35" :
+                statusText === "Cloud" ? "#4cd964" :
                 statusText === "Incognito" ? "#d46b94" :
                 "#8fb59c",
             }}
@@ -119,16 +129,52 @@ export default function ChatHeader({
             borderRadius: "999px",
             padding: "10px 16px",
             fontWeight: 800,
-            background: "rgba(255, 255, 255, 0.7)",
-            border: "1px solid rgba(255, 255, 255, 0.9)",
-            color: "#286b35",
-            boxShadow: "0 8px 25px rgba(40, 107, 53, 0.08)",
+            background: darkMode
+              ? "rgba(255,45,120,0.15)"
+              : "rgba(255, 255, 255, 0.7)",
+            border: darkMode
+              ? "1px solid rgba(255,45,120,0.3)"
+              : "1px solid rgba(255, 255, 255, 0.9)",
+            color: darkMode ? "#ff6b9d" : "#286b35",
+            boxShadow: darkMode
+              ? "0 8px 25px rgba(255,45,120,0.15)"
+              : "0 8px 25px rgba(40, 107, 53, 0.08)",
             cursor: "pointer",
           }}
         >
           🧠 {memoryCount}{" "}
           {memoryCount === 1 ? "Memory" : "Memories"}
         </button>
+
+        {/* Dark mode toggle button */}
+        {onToggleDarkMode && (
+          <button
+            onClick={onToggleDarkMode}
+            style={{
+              width: "42px",
+              height: "42px",
+              borderRadius: "999px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: darkMode
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(0,0,0,0.05)",
+              border: darkMode
+                ? "1px solid rgba(255,255,255,0.1)"
+                : "1px solid rgba(0,0,0,0.08)",
+              color: darkMode ? "#fff" : "#191d18",
+              boxShadow: darkMode
+                ? "0 8px 25px rgba(0,0,0,0.2)"
+                : "0 8px 25px rgba(40, 107, 53, 0.08)",
+              cursor: "pointer",
+              fontSize: "22px",
+              lineHeight: 1,
+            }}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        )}
 
         <div style={{ position: "relative" }}>
           <button
@@ -142,10 +188,16 @@ export default function ChatHeader({
               alignItems: "center",
               justifyContent: "center",
               fontWeight: 900,
-              background: "rgba(255, 255, 255, 0.7)",
-              border: "1px solid rgba(255, 255, 255, 0.9)",
-              color: "#191d18",
-              boxShadow: "0 8px 25px rgba(40, 107, 53, 0.08)",
+              background: darkMode
+                ? "rgba(255,255,255,0.08)"
+                : "rgba(255, 255, 255, 0.7)",
+              border: darkMode
+                ? "1px solid rgba(255,255,255,0.1)"
+                : "1px solid rgba(255, 255, 255, 0.9)",
+              color: darkMode ? "#fff" : "#191d18",
+              boxShadow: darkMode
+                ? "0 8px 25px rgba(0,0,0,0.2)"
+                : "0 8px 25px rgba(40, 107, 53, 0.08)",
               fontSize: "22px",
               lineHeight: 1,
               cursor: "pointer",
@@ -163,34 +215,39 @@ export default function ChatHeader({
                 width: "170px",
                 padding: "8px",
                 borderRadius: "18px",
-                background: "rgba(255, 255, 255, 0.96)",
-                border: "1px solid rgba(255, 255, 255, 0.9)",
-                boxShadow:
-                  "0 18px 45px rgba(40, 107, 53, 0.16)",
+                background: darkMode
+                  ? "rgba(20,20,30,0.96)"
+                  : "rgba(255, 255, 255, 0.96)",
+                border: darkMode
+                  ? "1px solid rgba(255,255,255,0.1)"
+                  : "1px solid rgba(255, 255, 255, 0.9)",
+                boxShadow: darkMode
+                  ? "0 18px 45px rgba(0,0,0,0.6)"
+                  : "0 18px 45px rgba(40, 107, 53, 0.16)",
                 backdropFilter: "blur(18px)",
                 WebkitBackdropFilter: "blur(18px)",
                 zIndex: 200,
               }}
             >
-              {/* Only show New chat for signed-in users */}
+              {/* Only show New chat for signed-in users and not incognito */}
               {currentUserId && !incognito && (
-  <button
-    onClick={handleNewChatClick}
-    style={{
-      width: "100%",
-      textAlign: "left",
-      borderRadius: "12px",
-      padding: "12px 14px",
-      fontWeight: 800,
-      color: "#191d18",
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-    }}
-  >
-    New chat
-  </button>
-)}
+                <button
+                  onClick={handleNewChatClick}
+                  style={{
+                    width: "100%",
+                    textAlign: "left",
+                    borderRadius: "12px",
+                    padding: "12px 14px",
+                    fontWeight: 800,
+                    color: darkMode ? "#fff" : "#191d18",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  New chat
+                </button>
+              )}
 
               {showLeaveGuestButton && (
                 <button
@@ -220,7 +277,7 @@ export default function ChatHeader({
                     borderRadius: "12px",
                     padding: "12px 14px",
                     fontWeight: 800,
-                    color: "#191d18",
+                    color: darkMode ? "#fff" : "#191d18",
                     background: "transparent",
                     border: "none",
                     cursor: "pointer",
