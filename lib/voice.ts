@@ -1,6 +1,12 @@
 let currentSpeechRunId = 0;
 let currentAudio: HTMLAudioElement | null = null;
 
+// ─── Helper: get selected voice from localStorage ──────────────────────
+function getSelectedVoice(): string {
+  if (typeof window === "undefined") return "en-US-AvaNeural";
+  return localStorage.getItem("vibe-voice") || "en-US-AvaNeural";
+}
+
 export function preloadVoices() {
   return Promise.resolve();
 }
@@ -12,7 +18,6 @@ function cleanTextForSpeech(text: string) {
     .replace(/_/g, "")
     .replace(/`/g, "")
     .replace(/#{1,6}\s/g, "")
-    // Vocal fillers — fix pronunciation
     .replace(/\b[uU]+m{2,}\b/g, "um")
     .replace(/\b[mM]{2,}\b/g, "hmm")
     .replace(/\b[hH]+m{2,}\b/g, "hmm")
@@ -21,7 +26,6 @@ function cleanTextForSpeech(text: string) {
     .replace(/\b[uU]+h{2,}\b/g, "uh")
     .replace(/\b[aA]+w{2,}\b/g, "aw")
     .replace(/\b[aA]+w+h+\b/g, "aw")
-    // --- FIX: hehe → heh heh, haha → ha ha ---
     .replace(/\b[hH]e[hH]e+\b/g, "hee heeee")
     .replace(/\b[hH]aha+\b/g, "ha ha")
     .replace(/\b[lL]ol\b/g, "haha")
@@ -29,7 +33,6 @@ function cleanTextForSpeech(text: string) {
     .replace(/\b[yY]+e+s+\b/g, "yes")
     .replace(/\b[nN]+o+\b/g, "no")
     .replace(/\b[sS]+o+\b/g, "so")
-    // Punctuation
     .replace(/—/g, ", ")
     .replace(/–/g, ", ")
     .replace(/…/g, "...")
@@ -51,26 +54,25 @@ function stopCurrentAudio() {
 
 async function playAvaNeuralVoice(text: string, runId: number, retryCount = 0) {
   const maxRetries = 2;
-  const delay = 1000 * Math.pow(2, retryCount); // 1s, 2s
+  const delay = 1000 * Math.pow(2, retryCount);
 
   try {
+    const voice = getSelectedVoice(); // <-- get the selected voice
+
     const response = await fetch("/api/tts", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text,
+        voice, // <-- send the voice to the API
       }),
     });
 
     if (!response.ok) {
-      throw new Error("Ava neural voice failed.");
+      throw new Error("TTS API failed.");
     }
 
-    if (runId !== currentSpeechRunId) {
-      return;
-    }
+    if (runId !== currentSpeechRunId) return;
 
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
@@ -94,14 +96,11 @@ async function playAvaNeuralVoice(text: string, runId: number, retryCount = 0) {
       URL.revokeObjectURL(audioUrl);
     }
   } catch (error) {
-    // Retry if we haven't exceeded max retries
     if (retryCount < maxRetries) {
       console.warn(`TTS attempt ${retryCount + 1} failed, retrying in ${delay}ms...`, error);
       await new Promise(resolve => setTimeout(resolve, delay));
       return playAvaNeuralVoice(text, runId, retryCount + 1);
     }
-    
-    // All retries failed — throw to trigger browser fallback
     console.warn("All TTS retries exhausted.");
     throw error;
   }
@@ -183,7 +182,7 @@ export async function speakText(text: string) {
   try {
     await playAvaNeuralVoice(cleanedText, runId);
   } catch (error) {
-    console.warn("Ava neural voice failed. Using browser fallback.", error);
+    console.warn("TTS failed. Using browser fallback.", error);
 
     if (runId === currentSpeechRunId) {
       await playBrowserFallback(cleanedText, runId);
@@ -191,20 +190,17 @@ export async function speakText(text: string) {
   }
 }
 
-// --- Pre-warm TTS (call once on app load) ---
 export async function prewarmTts() {
   try {
     await fetch("/api/tts", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         text: ".",
         prewarm: true,
       }),
     });
   } catch {
-    // Ignore errors — this is just a warm-up
+    // ignore
   }
 }

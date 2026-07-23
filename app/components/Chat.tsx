@@ -10,6 +10,7 @@ import MemoryScreenController from "./chat/MemoryScreenController";
 import MoodCheckScreen from "./screens/MoodCheckScreen";
 import IncognitoPinModal from "./IncognitoPinModal";
 import ConfirmModal from "./ConfirmModal";
+import VoiceSelectionScreen from "./screens/VoiceSelectionScreen"; // NEW
 import type { ChatMessage } from "@/lib/chatTypes";
 import { sendChatMessage } from "@/lib/sendChatMessage";
 import { loadInitialChatData } from "@/lib/loadInitialChatData";
@@ -118,14 +119,14 @@ export default function Chat() {
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   const [screen, setScreen] = useState<
-    "start" | "signin" | "chat" | "memory" | "mood" | "loading"
+    "start" | "signin" | "chat" | "memory" | "mood" | "loading" | "voice-select"
   >("start");
 
   const [incognito, setIncognito] = useState(false);
   const [listening, setListening] = useState(false);
   const [voiceScreen, setVoiceScreen] = useState(false);
 
-  // --- NEW: Dark mode state ---
+  // --- Dark mode state ---
   const [darkMode, setDarkMode] = useState(false);
 
   // PIN modal state
@@ -148,7 +149,7 @@ export default function Chat() {
   // Guest limit modal state
   const [showGuestLimitModal, setShowGuestLimitModal] = useState(false);
 
-  // --- NEW: Incognito guest modal state ---
+  // --- Incognito guest modal state ---
   const [showIncognitoGuestModal, setShowIncognitoGuestModal] = useState(false);
 
   const recognitionRef = useRef<any>(null);
@@ -156,17 +157,7 @@ export default function Chat() {
 
   const guestMessageCount = messages.filter((m) => m.role === "user").length;
 
-  const guestLimitReached = (() => {
-    const result = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
-    console.log("🔍 DEBUG guestLimitReached:", {
-      initialDataLoaded,
-      currentUserId,
-      guestMessageCount,
-      limit: GUEST_MESSAGE_LIMIT,
-      result,
-    });
-    return result;
-  })();
+  const guestLimitReached = initialDataLoaded && !currentUserId && guestMessageCount >= GUEST_MESSAGE_LIMIT;
 
   // --- loadInitialData ---
   async function loadInitialData(showLoading = false) {
@@ -183,12 +174,15 @@ export default function Chat() {
     setBrainSummary(data.brainSummary);
     setTodayMood(data.todayMood);
 
-    // --- ALWAYS SHOW MOOD CHECK ON APP LOAD FOR SIGNED‑IN USERS ---
     if (data.currentUserId) {
-      // Show mood check every time the app loads (signed‑in)
-      setScreen("mood");
+      // Check if user has already selected a voice
+      const savedVoice = localStorage.getItem("vibe-voice");
+      if (savedVoice) {
+        setScreen("mood");
+      } else {
+        setScreen("voice-select");
+      }
     } else {
-      // Guests go straight to start (welcome) screen
       setScreen("start");
     }
 
@@ -261,15 +255,13 @@ export default function Chat() {
     setPinError("");
   }
 
-  // --- CORRECTED: toggleIncognito uses currentUserId to prevent guest incognito ---
+  // --- toggleIncognito ---
   async function toggleIncognito() {
-    // If user is not signed in (guest), show the modal and return
     if (!currentUserId) {
       setShowIncognitoGuestModal(true);
       return;
     }
 
-    // Signed‑in user – proceed with normal incognito logic
     const savedPin = getIncognitoPin();
 
     if (!incognito) {
@@ -377,7 +369,6 @@ export default function Chat() {
   }
 
   async function sendMessage() {
-    // Use currentUserId from state (instant, no network call)
     const isActuallySignedIn = !!currentUserId;
 
     if (isActuallySignedIn) {
@@ -403,7 +394,7 @@ export default function Chat() {
       return;
     }
 
-    // Guest limit logic (only for non‑signed‑in users)
+    // Guest limit logic
     if (guestLimitReached) {
       setShowGuestLimitModal(true);
       return;
@@ -515,6 +506,17 @@ export default function Chat() {
           loadInitialData(true);
         }}
         onGuest={() => setScreen("chat")}
+      />
+    );
+  }
+
+  if (screen === "voice-select") {
+    return (
+      <VoiceSelectionScreen
+        onSelect={(voice) => {
+          localStorage.setItem("vibe-voice", voice);
+          setScreen("mood");
+        }}
       />
     );
   }

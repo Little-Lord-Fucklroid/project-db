@@ -7,16 +7,19 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-const VOICE = "en-US-AvaNeural";
+// Default voice (Ava) – will be overridden if request provides a voice
+const DEFAULT_VOICE = "en-US-AvaNeural";
 const RATE = "-8%";
 const PITCH = "-2Hz";
 
 function runPythonTts({
   text,
   outputPath,
+  voice,
 }: {
   text: string;
   outputPath: string;
+  voice: string;
 }) {
   return new Promise<void>((resolve, reject) => {
     const scriptPath = path.join(
@@ -30,8 +33,7 @@ function runPythonTts({
       return;
     }
 
-    const pythonCommand =
-      process.env.PYTHON_BIN || "python3";
+    const pythonCommand = process.env.PYTHON_BIN || "python3";
 
     const child = spawn(pythonCommand, [scriptPath], {
       stdio: ["pipe", "pipe", "pipe"],
@@ -42,7 +44,7 @@ function runPythonTts({
     const timeout = setTimeout(() => {
       child.kill("SIGTERM");
       reject(new Error("TTS timed out."));
-    }, 25000);
+    }, 45000); // increased timeout
 
     child.stderr.on("data", (chunk) => {
       errorOutput += chunk.toString();
@@ -72,7 +74,7 @@ function runPythonTts({
       JSON.stringify({
         text,
         output_path: outputPath,
-        voice: VOICE,
+        voice, // now dynamic
         rate: RATE,
         pitch: PITCH,
       })
@@ -89,12 +91,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const isPrewarm = body.prewarm === true;
 
-    // If prewarm, return immediately without generating audio
     if (isPrewarm) {
       return new Response(null, { status: 204 });
     }
 
     let text = String(body.text || "").trim();
+    // Get voice from request, fallback to default
+    const voice = String(body.voice || DEFAULT_VOICE);
 
     if (!text) {
       return Response.json(
@@ -115,6 +118,7 @@ export async function POST(req: Request) {
     await runPythonTts({
       text,
       outputPath,
+      voice,
     });
 
     const audioBuffer = await fs.readFile(outputPath);
@@ -127,10 +131,10 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Ava TTS route failed:", error);
+    console.error("TTS route failed:", error);
 
     return Response.json(
-      { error: "TTS failed." },
+      { error: error instanceof Error ? error.message : "TTS failed." },
       { status: 500 }
     );
   } finally {
