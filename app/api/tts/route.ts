@@ -98,7 +98,7 @@ export async function POST(req: Request) {
     let text = String(body.text || "").trim();
     // Get voice from request, fallback to default
     const voice = String(body.voice || DEFAULT_VOICE);
-
+console.log("📥 API received voice:", body.voice);
     if (!text) {
       return Response.json(
         { error: "Missing text." },

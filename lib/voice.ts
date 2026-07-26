@@ -58,7 +58,7 @@ async function playAvaNeuralVoice(text: string, runId: number, retryCount = 0) {
 
   try {
     const voice = getSelectedVoice(); // <-- get the selected voice
-
+console.log("🔊 Frontend selected voice:", voice);
     const response = await fetch("/api/tts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
