@@ -7,15 +7,15 @@ import tempfile
 import edge_tts
 
 
-VOICE = "en-US-AvaNeural"
+DEFAULT_VOICE = "en-US-AvaNeural"
 RATE = "-8%"
 PITCH = "-2Hz"
 
 
-async def create_speech_file(text: str, output_path: str):
+async def create_speech_file(text: str, output_path: str, voice: str = DEFAULT_VOICE):
     communicate = edge_tts.Communicate(
         text=text,
-        voice=VOICE,
+        voice=voice,
         rate=RATE,
         pitch=PITCH,
     )
@@ -40,6 +40,7 @@ class handler(BaseHTTPRequestHandler):
 
             body = json.loads(raw_body.decode("utf-8"))
             text = str(body.get("text", "")).strip()
+            voice = str(body.get("voice", DEFAULT_VOICE)).strip()
 
             if not text:
                 self.send_json_error(400, "Missing text.")
@@ -56,7 +57,7 @@ class handler(BaseHTTPRequestHandler):
             temp_path = temp_file.name
             temp_file.close()
 
-            asyncio.run(create_speech_file(text, temp_path))
+            asyncio.run(create_speech_file(text, temp_path, voice))
 
             with open(temp_path, "rb") as audio_file:
                 audio_bytes = audio_file.read()
