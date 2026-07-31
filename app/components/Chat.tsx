@@ -517,6 +517,7 @@ export default function Chat() {
           localStorage.setItem("vibe-voice", voice);
           setScreen("mood");
         }}
+        darkMode={darkMode}
       />
     );
   }

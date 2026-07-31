@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import DarkBackgroundEffects from "../DarkBackgroundEffects";
 
 type VoiceSelectionScreenProps = {
   onSelect: (voice: string) => void;
+  darkMode?: boolean;
 };
 
 const VOICES = [
@@ -17,6 +19,7 @@ const SAMPLE_TEXT = "I'm Vibe. Let's talk about how you're feeling today.";
 
 export default function VoiceSelectionScreen({
   onSelect,
+  darkMode = false,
 }: VoiceSelectionScreenProps) {
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -68,10 +71,20 @@ export default function VoiceSelectionScreen({
   return (
     <main
       className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden px-6"
-      style={{ background: "#f7faf3" }}
+      style={{
+        background: darkMode ? "#060610" : "#f7faf3",
+        fontFamily: "'Inter', -apple-system, sans-serif",
+      }}
     >
-      <div className="mesh-bg" />
-      <div className="light-ray opacity-30" />
+      {/* Background effects */}
+      {darkMode ? (
+        <DarkBackgroundEffects />
+      ) : (
+        <>
+          <div className="mesh-bg" />
+          <div className="light-ray opacity-30" />
+        </>
+      )}
 
       <div className="w-full max-w-md z-10">
         <div className="text-center mb-10">
@@ -84,7 +97,7 @@ export default function VoiceSelectionScreen({
             style={{
               fontSize: "28px",
               fontWeight: 800,
-              color: "#191d18",
+              color: darkMode ? "rgba(255,255,255,0.92)" : "#191d18",
               marginBottom: "8px",
             }}
           >
@@ -92,9 +105,9 @@ export default function VoiceSelectionScreen({
           </h1>
           <p
             style={{
-              color: "#40493f",
+              color: darkMode ? "rgba(255,255,255,0.4)" : "#40493f",
               fontSize: "16px",
-              opacity: 0.75,
+              opacity: darkMode ? 0.75 : 0.75,
             }}
           >
             Pick the voice that feels right for you.
@@ -105,17 +118,23 @@ export default function VoiceSelectionScreen({
           {VOICES.map((voice) => (
             <div
               key={voice.id}
-              className="glass-card rounded-[32px] p-6 space-y-4"
+              className="rounded-[32px] p-6 space-y-4"
               style={{
-                boxShadow: "0 16px 50px rgba(40,107,53,0.08)",
+                background: darkMode ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.45)",
+                backdropFilter: darkMode ? "blur(20px)" : "blur(20px)",
+                WebkitBackdropFilter: darkMode ? "blur(20px)" : "blur(20px)",
+                border: darkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(255,255,255,0.5)",
+                boxShadow: darkMode
+                  ? "0 16px 60px rgba(0,0,0,0.4)"
+                  : "0 16px 50px rgba(40,107,53,0.08)",
               }}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 style={{ fontWeight: 700, fontSize: "20px", color: "#191d18" }}>
+                  <h2 style={{ fontWeight: 700, fontSize: "20px", color: darkMode ? "rgba(255,255,255,0.92)" : "#191d18" }}>
                     {voice.label}
                   </h2>
-                  <p style={{ fontSize: "13px", color: "#707a6e" }}>
+                  <p style={{ fontSize: "13px", color: darkMode ? "rgba(255,255,255,0.3)" : "#707a6e" }}>
                     {voice.description}
                   </p>
                 </div>
@@ -129,10 +148,10 @@ export default function VoiceSelectionScreen({
                     flex: 1,
                     padding: "12px",
                     borderRadius: "16px",
-                    background: "rgba(255,255,255,0.7)",
-                    border: "1px solid rgba(255,255,255,0.9)",
+                    background: darkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.7)",
+                    border: darkMode ? "1px solid rgba(255,255,255,0.18)" : "1px solid rgba(255,255,255,0.9)",
                     fontWeight: 600,
-                    color: "#191d18",
+                    color: darkMode ? "rgba(255,255,255,0.9)" : "#191d18",
                     cursor: loading ? "not-allowed" : "pointer",
                     opacity: loading && previewing !== voice.id ? 0.6 : 1,
                   }}
@@ -146,11 +165,15 @@ export default function VoiceSelectionScreen({
                     flex: 1,
                     padding: "12px",
                     borderRadius: "16px",
-                    background: "linear-gradient(135deg, #88ce8d 0%, #acf4af 100%)",
+                    background: darkMode
+                      ? "linear-gradient(135deg, #7dd4ab 0%, #c0a0d8 40%, #f0a0bc 100%)"
+                      : "linear-gradient(135deg, #88ce8d 0%, #acf4af 100%)",
                     border: "none",
                     fontWeight: 700,
-                    color: "#115925",
-                    boxShadow: "0 4px 16px rgba(136,206,141,0.3)",
+                    color: darkMode ? "rgba(8,6,16,0.95)" : "#115925",
+                    boxShadow: darkMode
+                      ? "0 4px 20px rgba(125,212,171,0.25), 0 2px 10px rgba(240,160,188,0.15)"
+                      : "0 4px 16px rgba(136,206,141,0.3)",
                     cursor: "pointer",
                   }}
                 >
@@ -161,7 +184,7 @@ export default function VoiceSelectionScreen({
           ))}
         </div>
 
-        <p className="text-center mt-6" style={{ color: "#707a6e", fontSize: "13px" }}>
+        <p className="text-center mt-6" style={{ color: darkMode ? "rgba(255,255,255,0.3)" : "#707a6e", fontSize: "13px" }}>
           You can change this later in settings.
         </p>
       </div>
