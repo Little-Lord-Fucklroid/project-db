@@ -292,7 +292,7 @@ if (currentUserId && activeConversationId) {
           : 5000;
 
     const intervalTime = Math.max(
-     15,
+     75,
       Math.floor(duration / reply.length)
     );
 

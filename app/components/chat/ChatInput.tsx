@@ -1,3 +1,5 @@
+import IncognitoPulse from "../IncognitoPulse";
+
 type ChatInputProps = {
   message: string;
   loading: boolean;
@@ -94,9 +96,16 @@ export default function ChatInput({
                 : "border border-gray-300 bg-white text-black hover:bg-gray-50"
             }`}
           >
-            <span className="block truncate">
-              {incognito ? "🌙 Exit" : "🌙 Incognito"}
-            </span>
+            <div className="block truncate flex items-center gap-1.5">
+              {incognito ? (
+                <>
+                  <IncognitoPulse size={20} active={true} />
+                  <span>Exit</span>
+                </>
+              ) : (
+                "🌙 Incognito"
+              )}
+            </div>
           </button>
 
           {/* Send / Sign In button */}

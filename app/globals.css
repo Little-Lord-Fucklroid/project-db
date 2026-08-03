@@ -255,3 +255,182 @@ body {
   0%,100% { transform: scale(1) translate(0,0); }
   50% { transform: scale(0.85) translate(8%,-6%); }
 }
+
+/* ─── PIN Modal Animations ─── */
+
+@keyframes pin-digit-enter {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pin-glow-sweep {
+  0% { box-shadow: 0 0 0 0 rgba(212,107,148,0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(212,107,148,0.15); }
+  100% { box-shadow: 0 0 0 0 rgba(212,107,148,0); }
+}
+
+@keyframes pin-shake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@keyframes pin-success-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(136,206,141,0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(136,206,141,0); }
+  100% { box-shadow: 0 0 0 0 rgba(136,206,141,0); }
+}
+
+/* Merge finale — boxes collapse into one */
+@keyframes pin-merge {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.9); opacity: 0.6; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Checkmark draw animation */
+@keyframes pin-checkmark-draw {
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
+}
+
+/* Checkmark fade-in */
+@keyframes pin-checkmark-fade {
+  0% { opacity: 0; transform: scale(0.5); }
+  60% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Success glow ring */
+@keyframes pin-success-ring {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.pin-digit-enter {
+  animation: pin-digit-enter 0.25s ease-out;
+}
+
+.pin-glow-sweep {
+  animation: pin-glow-sweep 0.6s ease-out;
+}
+
+.pin-shake {
+  animation: pin-shake 0.4s ease-out;
+}
+
+.pin-success-pulse {
+  animation: pin-success-pulse 0.5s ease-out;
+}
+
+.pin-merge {
+  animation: pin-merge 0.35s ease-in forwards;
+}
+
+.pin-merge-container {
+  gap: 0 !important;
+  transition: gap 0.3s ease;
+}
+
+.pin-merge-container input {
+  transition: all 0.3s ease;
+}
+
+.pin-merge-container input:last-child {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pin-checkmark-svg {
+  animation: pin-checkmark-fade 0.4s ease-out 0.1s both;
+}
+
+.pin-checkmark-path {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: pin-checkmark-draw 0.4s ease-out 0.2s forwards;
+}
+
+.pin-success-ring {
+  animation: pin-success-ring 0.6s ease-out 0.3s both;
+}
+
+/* ─── Incognito Pulse Animation ─── */
+
+@keyframes incognito-pulse-1 {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes incognito-pulse-2 {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes incognito-pulse-3 {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes incognito-glow-breathe {
+  0%,100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes incognito-pin-breathe {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+.incognito-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(136, 206, 141, 0.35);
+  pointer-events: none;
+}
+
+.incognito-pulse-ring-1 {
+  width: 48px;
+  height: 48px;
+  animation: incognito-pulse-1 1.8s ease-out infinite;
+}
+
+.incognito-pulse-ring-2 {
+  width: 48px;
+  height: 48px;
+  animation: incognito-pulse-2 1.8s ease-out infinite 0.6s;
+}
+
+.incognito-pulse-ring-3 {
+  width: 48px;
+  height: 48px;
+  animation: incognito-pulse-3 1.8s ease-out infinite 1.2s;
+}
+
+.incognito-pulse-glow {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #88CE8D;
+  box-shadow:
+    0 0 12px rgba(136, 206, 141, 0.6),
+    0 0 30px rgba(136, 206, 141, 0.3),
+    0 0 60px rgba(136, 206, 141, 0.15);
+  animation: incognito-glow-breathe 2s ease-in-out infinite;
+}
+
+.incognito-pulse-pin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #286B35;
+  border: 3px solid #88CE8D;
+  animation: incognito-pin-breathe 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+}

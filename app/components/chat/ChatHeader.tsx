@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import IncognitoPulse from "../IncognitoPulse";
 
 type ChatHeaderProps = {
   onOpenMemory: () => void;
@@ -88,7 +89,7 @@ export default function ChatHeader({
           Vibe
         </h1>
 
-        <p
+        <div
           style={{
             fontSize: "13px",
             color: darkMode ? "rgba(255,255,255,0.5)" : "#707a6e",
@@ -99,20 +100,22 @@ export default function ChatHeader({
             gap: "6px",
           }}
         >
-          <span
-            style={{
-              display: "inline-block",
-              width: "8px",
-              height: "8px",
-              borderRadius: "999px",
-              backgroundColor:
-                statusText === "Cloud" ? "#4cd964" :
-                statusText === "Incognito" ? "#d46b94" :
-                "#8fb59c",
-            }}
-          />
+          {statusText === "Incognito" ? (
+            <IncognitoPulse size={28} active={true} />
+          ) : (
+            <span
+              style={{
+                display: "inline-block",
+                width: "8px",
+                height: "8px",
+                borderRadius: "999px",
+                backgroundColor:
+                  statusText === "Cloud" ? "#4cd964" : "#8fb59c",
+              }}
+            />
+          )}
           {statusText} mode
-        </p>
+        </div>
       </div>
 
       <div
