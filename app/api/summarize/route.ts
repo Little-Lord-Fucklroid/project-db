@@ -61,9 +61,15 @@ Update the user's long-term context summary.
       temperature: 0.3,
     });
 
-    const summary =
+    const emojiRegex =
+    /[\u{1F000}-\u{1FAFF}]|[\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{2702}-\u{27B0}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F700}-\u{1F77F}]|[\u{2B00}-\u{2BFF}]|[\u{1F004}]|[\u{1F0CF}]|[\u{1F18E}]|[\u{1F200}]|[\u{1F250}]|[\u{1F300}-\u{1F320}]|[\u{1F3ED}-\u{1F3F0}]|[\u{1F400}-\u{1F4FD}]|[\u{1F53E}-\u{1F5FF}]/gu;
+
+    let summary =
       completion.choices[0].message.content?.trim() ||
       existingSummary;
+
+    // Strip emojis from the summary
+    summary = summary.replace(emojiRegex, "").trim();
 
     return Response.json({
       summary,
