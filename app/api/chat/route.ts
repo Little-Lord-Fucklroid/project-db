@@ -1,14 +1,20 @@
 import { openai } from "@/lib/openai";
 import { SYSTEM_PROMPT } from "@/lib/prompts";
 
-// Regex to match and remove emojis from AI responses
+// Comprehensive regex to match and remove emojis from AI responses
+// Covers all Unicode emoji ranges including emoticons, symbols, transport, flags, etc.
 const EMOJI_REGEX =
-  /[\u{1F000}-\u{1FAFF}]|[\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{2702}-\u{27B0}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F700}-\u{1F77F}]|[\u{2B00}-\u{2BFF}]|[\u{1F170}-\u{1F1FF}]|[\u{1F004}]|[\u{1F0CF}]|[\u{1F18E}]|[\u{1F200}]|[\u{1F210}-\u{1F232}]|[\u{1F234}-\u{1F237}]|[\u{1F239}-\u{1F23B}]|[\u{1F250}]|[\u{1F261}-\u{1F265}]|[\u{1F300}-\u{1F320}]|[\u{1F321}]|[\u{1F322}-\u{1F335}]|[\u{1F336}-\u{1F373}]|[\u{1F374}-\u{1F378}]|[\u{1F379}-\u{1F3EC}]|[\u{1F3ED}-\u{1F3F0}]|[\u{1F3F1}-\u{1F3F3}]|[\u{1F3F4}]|[\u{1F3F5}-\u{1F3FF}]|[\u{1F400}-\u{1F4FD}]|[\u{1F4FF}-\u{1F53D}]|[\u{1F53E}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F600}-\u{1F64F}]/gu;
+  /[\u{1F000}-\u{1FAFF}]|[\u{2600}-\u{27BF}]|[\u{1F1E6}-\u{1F1FF}]|[\u{1F900}-\u{1F9FF}]|[\u{2702}-\u{27B0}]|[\u{1F600}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F300}-\u{1F5FF}]|[\u{1F700}-\u{1F77F}]|[\u{2B00}-\u{2BFF}]|[\u{1F170}-\u{1F1FF}]|[\u{1F004}]|[\u{1F0CF}]|[\u{1F18E}]|[\u{1F200}-\u{1F2FF}]|[\u{1F300}-\u{1F3FF}]|[\u{1F400}-\u{1F4FF}]|[\u{1F500}-\u{1F5FF}]|[\u{1F600}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{2B00}-\u{2BFF}]|[\u{23E9}-\u{23EF}]|[\u{23F0}-\u{23FF}]|[\u{24C2}]|[\u{25AA}-\u{25AB}]|[\u{25B6}]|[\u{25C0}]|[\u{25FB}-\u{25FE}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{2934}-\u{2935}]|[\u{2B00}-\u{2BFF}]|[\u{3030}]|[\u{303D}]|[\u{3297}]|[\u{3299}]/gu;
 
 function stripEmojis(text: string): string {
-  const stripped = text.replace(EMOJI_REGEX, "");
+  let stripped = text.replace(EMOJI_REGEX, "");
+  // Also remove common emoji-like patterns (e.g., :smile:, :heart:, etc.)
+  stripped = stripped.replace(/:[a-z_+-]+:/gi, "");
   // Clean up any doubled spaces left behind by removed emojis
-  return stripped.replace(/\s{2,}/g, " ").trim();
+  stripped = stripped.replace(/\s{2,}/g, " ").trim();
+  // Clean up spaces before punctuation
+  stripped = stripped.replace(/\s+([.,!?;:])/g, "$1");
+  return stripped;
 }
 
 export async function POST(req: Request) {
