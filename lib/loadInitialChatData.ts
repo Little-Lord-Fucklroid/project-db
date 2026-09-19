@@ -29,7 +29,7 @@ export type InitialChatData = {
   memories: Memory[];
   brainSummary: string;
   todayMood: MoodEntry | null;
-  nextScreen: "chat" | "mood" | null;
+  nextScreen: "chat" | "mood" | "home" | null;
 };
 
 export async function loadInitialChatData(): Promise<InitialChatData> {
@@ -60,7 +60,7 @@ export async function loadInitialChatData(): Promise<InitialChatData> {
       memories: cloudMemories,
       brainSummary: cloudBrainSummary,
       todayMood: existingMood,
-      nextScreen: existingMood ? "chat" : "mood",
+      nextScreen: existingMood ? "home" : "mood",
     };
   }
 

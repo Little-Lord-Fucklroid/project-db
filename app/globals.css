@@ -24,16 +24,6 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
-:root {
-  --mine-bg: #f7faf3;
-  --mine-green: #286b35;
-  --mine-soft-green: #88ce8d;
-  --mine-light-green: #acf4af;
-  --mine-text: #191d18;
-  --mine-muted: #40493f;
-  --mine-pink: #ffa4b6;
-}
-
 .mesh-bg {
   position: fixed;
   inset: 0;
@@ -52,33 +42,8 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
-.btn-mine {
-  background: linear-gradient(
-    135deg,
-    #88ce8d 0%,
-    #acf4af 100%
-  );
-  color: #115925;
-  border: none;
-  box-shadow: 0 8px 30px rgba(136, 206, 141, 0.35);
-}
 
-.btn-primary {
-  background: linear-gradient(
-    135deg,
-    #88ce8d 0%,
-    #acf4af 100%
-  );
-  color: #115925;
-  border: none;
-  box-shadow: 0 10px 30px rgba(136, 206, 141, 0.35);
-  transition: all 0.2s ease;
-}
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 35px rgba(136, 206, 141, 0.45);
-}
 
 
 .shimmer-heart {
@@ -155,39 +120,9 @@ body {
 }
 /* ─── Dark Sign‑in Animations ─── */
 
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
 
-@keyframes spin {
-  from { --angle: 0deg; }
-  to { --angle: 360deg; }
-}
 
-.rotating-border {
-  position: absolute;
-  inset: -1.5px;
-  border-radius: 29px;
-  background: conic-gradient(
-    from var(--angle, 0deg),
-    rgba(125,212,171,0) 0deg,
-    rgba(125,212,171,0.7) 60deg,
-    rgba(200,150,230,0.6) 120deg,
-    rgba(240,160,188,0.7) 180deg,
-    rgba(240,160,188,0) 240deg,
-    rgba(125,212,171,0) 360deg
-  );
-  animation: spin 6s linear infinite;
-  z-index: 0;
-}
 
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(2deg); }
-  66% { transform: translateY(-5px) rotate(-1.5deg); }
-}
 
 @keyframes shimmer {
   0% { background-position: 0% center; }
@@ -225,13 +160,6 @@ body {
   animation: b4 7s ease-in-out infinite;
   filter: blur(50px);
 }
-.blob-5 {
-  width: 30vw; height: 30vh;
-  bottom: 10%; left: 20%;
-  background: radial-gradient(circle, rgba(240,160,188,0.12) 0%, transparent 70%);
-  animation: b5 13s ease-in-out infinite;
-  filter: blur(55px);
-}
 
 @keyframes b1 {
   0%,100% { transform: translate(0,0) scale(1); }
@@ -251,10 +179,6 @@ body {
   0%,100% { transform: scale(1) translate(0,0); }
   50% { transform: scale(1.2) translate(-5%, 8%); }
 }
-@keyframes b5 {
-  0%,100% { transform: scale(1) translate(0,0); }
-  50% { transform: scale(0.85) translate(8%,-6%); }
-}
 
 /* ─── PIN Modal Animations ─── */
 
@@ -264,11 +188,6 @@ body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes pin-glow-sweep {
-  0% { box-shadow: 0 0 0 0 rgba(212,107,148,0.5); }
-  50% { box-shadow: 0 0 0 8px rgba(212,107,148,0.15); }
-  100% { box-shadow: 0 0 0 0 rgba(212,107,148,0); }
-}
 
 @keyframes pin-shake {
   0%,100% { transform: translateX(0); }
@@ -278,11 +197,6 @@ body {
   80% { transform: translateX(3px); }
 }
 
-@keyframes pin-success-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(136,206,141,0.5); }
-  70% { box-shadow: 0 0 0 12px rgba(136,206,141,0); }
-  100% { box-shadow: 0 0 0 0 rgba(136,206,141,0); }
-}
 
 /* Merge finale — boxes collapse into one */
 @keyframes pin-merge {
@@ -315,17 +229,11 @@ body {
   animation: pin-digit-enter 0.25s ease-out;
 }
 
-.pin-glow-sweep {
-  animation: pin-glow-sweep 0.6s ease-out;
-}
 
 .pin-shake {
   animation: pin-shake 0.4s ease-out;
 }
 
-.pin-success-pulse {
-  animation: pin-success-pulse 0.5s ease-out;
-}
 
 .pin-merge {
   animation: pin-merge 0.35s ease-in forwards;

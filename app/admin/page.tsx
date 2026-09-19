@@ -320,12 +320,6 @@ type AdminOverview = {
   }[];
 };
 
-const ALPINE = "#183b32";
-const ALPINE_SOFT = "#2f5b4d";
-const ROSE = "#d46b94";
-const CREAM = "#f4efe4";
-const SAGE = "#8fb59c";
-
 // ─── Utility Functions (unchanged) ──────────────────────────────────────
 
 function formatDate(value: string | null) {

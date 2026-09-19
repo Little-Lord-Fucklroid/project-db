@@ -13,6 +13,7 @@ type ChatHeaderProps = {
   onSignOut: () => void | Promise<void>;
   darkMode?: boolean;
   onToggleDarkMode?: () => void;
+  onBackToHome?: () => void;
 };
 
 export default function ChatHeader({
@@ -25,6 +26,7 @@ export default function ChatHeader({
   onSignOut,
   darkMode = false,
   onToggleDarkMode,
+  onBackToHome,
 }: ChatHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -76,6 +78,26 @@ export default function ChatHeader({
         justifyContent: "space-between",
       }}
     >
+      {onBackToHome && (
+        <button
+          onClick={onBackToHome}
+          aria-label="Back to home"
+          style={{
+            borderRadius: "999px",
+            padding: "8px 10px",
+            background: darkMode ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+            border: darkMode ? "1px solid rgba(255,255,255,0.1)" : "1px solid rgba(255,255,255,0.9)",
+            color: darkMode ? "#fff" : "#191d18",
+            cursor: "pointer",
+            fontSize: "16px",
+            lineHeight: 1,
+            marginRight: "10px",
+          }}
+        >
+          ←
+        </button>
+      )}
+
       <div>
         <h1
           style={{

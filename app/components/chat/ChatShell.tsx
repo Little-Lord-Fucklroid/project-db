@@ -16,6 +16,7 @@ type ChatShellProps = {
   messagesEndRef: RefObject<HTMLDivElement | null>;
   guestLimitReached?: boolean;
   onOpenMemory: () => void;
+  onBackToHome?: () => void;
   onNewChat: () => void | Promise<void>;
   onLeaveGuest: () => void;
   onSignOut: () => void | Promise<void>;
@@ -40,6 +41,7 @@ export default function ChatShell({
   currentUserId,
   messagesEndRef,
   guestLimitReached = false,
+  onBackToHome,
   onOpenMemory,
   onNewChat,
   onLeaveGuest,
@@ -81,6 +83,7 @@ export default function ChatShell({
             onOpenMemory={onOpenMemory}
             onNewChat={onNewChat}
             onLeaveGuest={onLeaveGuest}
+            onBackToHome={onBackToHome}
             memoryCount={memoryCount}
             currentUserId={currentUserId}
             incognito={incognito}

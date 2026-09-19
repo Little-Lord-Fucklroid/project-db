@@ -1,6 +1,5 @@
 "use client";
 import { prewarmTts } from "@/lib/voice";
-import { supabase } from "@/lib/supabaseClient";
 import { useState, useRef, useEffect } from "react";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import SignInScreen from "./screens/SignInScreen";
@@ -8,9 +7,12 @@ import VoiceScreen from "./screens/VoiceScreen";
 import ChatShell from "./chat/ChatShell";
 import MemoryScreenController from "./chat/MemoryScreenController";
 import MoodCheckScreen from "./screens/MoodCheckScreen";
+import HomeScreen from "./screens/HomeScreen";
 import IncognitoPinModal from "./IncognitoPinModal";
 import ConfirmModal from "./ConfirmModal";
-import VoiceSelectionScreen from "./screens/VoiceSelectionScreen"; // NEW
+import MentalInsightsScreen from "./screens/MentalInsightsScreen";
+import VoiceSelectionScreen from "./screens/VoiceSelectionScreen";
+import InsightScreen from "./screens/InsightScreen";
 import type { ChatMessage } from "@/lib/chatTypes";
 import { sendChatMessage } from "@/lib/sendChatMessage";
 import { loadInitialChatData } from "@/lib/loadInitialChatData";
@@ -119,7 +121,7 @@ export default function Chat() {
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   const [screen, setScreen] = useState<
-    "start" | "signin" | "chat" | "memory" | "mood" | "loading" | "voice-select"
+    "start" | "signin" | "chat" | "memory" | "mood" | "loading" | "voice-select" | "home" | "insights" | "insight"
   >("start");
 
   const [incognito, setIncognito] = useState(false);
@@ -527,8 +529,40 @@ export default function Chat() {
       <MoodCheckScreen
         onComplete={(mood) => {
           setTodayMood(mood);
-          setScreen("chat");
+          setScreen("home");
         }}
+      />
+    );
+  }
+
+  if (screen === "home") {
+    return (
+      <HomeScreen
+        onNavigateToChat={() => setScreen("chat")}
+        onNavigateToMood={() => setScreen("mood")}
+        onNavigateToMemory={() => setScreen("memory")}
+        onNavigateToInsights={() => setScreen("insights")}
+        onNavigateToInsight={() => setScreen("insight")}
+        todayMood={todayMood}
+        brainSummary={brainSummary}
+        memories={memories}
+        userName={currentUserId ? "Kyan" : "You"}
+      />
+    );
+  }
+
+  if (screen === "insights") {
+    return (
+      <MentalInsightsScreen
+        onBack={() => setScreen("home")}
+      />
+    );
+  }
+
+  if (screen === "insight") {
+    return (
+      <InsightScreen
+        onBack={() => setScreen("home")}
       />
     );
   }
@@ -542,7 +576,7 @@ export default function Chat() {
         currentUserId={currentUserId}
         incognito={incognito}
         conversationId={conversationId}
-        onBack={() => setScreen("chat")}
+        onBack={() => setScreen("home")}
       />
     );
   }
@@ -605,6 +639,7 @@ export default function Chat() {
         messagesEndRef={messagesEndRef}
         guestLimitReached={guestLimitReached}
         onOpenMemory={() => setScreen("memory")}
+        onBackToHome={() => setScreen("home")}
         onNewChat={handleNewChat}
         onLeaveGuest={handleLeaveGuest}
         onSignOut={handleSignOut}

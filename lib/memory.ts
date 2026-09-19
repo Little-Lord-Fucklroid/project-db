@@ -303,10 +303,6 @@ export function saveMemories(memories: Memory[]) {
   );
 }
 
-export function shouldSaveMemory(text: string) {
-  return extractMemoryFact(text) !== null;
-}
-
 export function createMemoryFromText(text: string) {
   const cleanText = extractMemoryFact(text);
 
