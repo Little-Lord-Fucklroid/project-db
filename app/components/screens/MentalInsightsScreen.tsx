@@ -1,10 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export default function MentalInsightsScreen({
   onBack,
 }: {
   onBack?: () => void;
 }) {
+  const [analytics, setAnalytics] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/analytics/mood")
+      .then((res) => res.json())
+      .then((data) => setAnalytics(data))
+      .catch(() => setAnalytics({ stressLevel: "low", sleepQuality: 6.8, dominantMood: { label: "Calm", count: 0 }, moodTrend: [] }));
+  }, []);
   return (
     <main
       className="min-h-screen w-full relative overflow-hidden flex flex-col"
@@ -62,14 +72,18 @@ export default function MentalInsightsScreen({
               <line x1="0" y1="50" x2="280" y2="50" stroke="#ddd6f0" strokeWidth="1" />
               <line x1="0" y1="75" x2="280" y2="75" stroke="#ddd6f0" strokeWidth="1" />
 
-              {/* Purple line */}
+              {/* Purple line - real data when available */}
               <polyline
                 fill="none"
                 stroke="#9b7ce0"
                 strokeWidth="3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                points="10,55 50,35 90,20 130,40 170,60 210,30 250,45 270,70"
+                points={analytics?.moodTrend?.length ? analytics.moodTrend.map((d: any, i: number) => {
+                  const x = 10 + (i * (260 / Math.max(analytics.moodTrend.length - 1, 1)));
+                  const y = 75 - (d.intensity || 5) * 6;
+                  return `${x},${y}`;
+                }).join(" ") : "10,55 50,35 90,20 130,40 170,60 210,30 250,45 270,70"}
               />
 
               {/* Dots */}
@@ -106,7 +120,7 @@ export default function MentalInsightsScreen({
             className="rounded-[28px] p-4 shadow-[0_10px_35px_rgba(240,120,50,0.2)]"
             style={{ background: "linear-gradient(135deg, #ff9a6e 0%, #ff7848 100%)" }}
           >
-            <h3 className="text-[13px] font-extrabold text-white tracking-tight mb-1">Stress Level</h3>
+            <h3 className="text-[13px] font-extrabold text-white tracking-tight mb-1">Stress Level: {analytics?.stressLevel || "low"}</h3>
             <div className="flex items-end gap-1 h-[60px]">
               {[35,45,30,70,55,45,40].map((h,i) => (
                 <div key={i} className="flex-1 rounded-t-lg bg-white/30 backdrop-blur-sm" style={{ height: `${h}%`, minHeight: 4 }} />
@@ -145,7 +159,7 @@ export default function MentalInsightsScreen({
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[15px] font-extrabold text-[#3a1e5e] tracking-tight">Sleep Quality</h3>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-extrabold text-[#8a6fb0] bg-white/50 rounded-full px-3 py-0.5 backdrop-blur-sm border border-white/40">6.8 hr/day</span>
+              <span className="text-[11px] font-extrabold text-[#8a6fb0] bg-white/50 rounded-full px-3 py-0.5 backdrop-blur-sm border border-white/40">{analytics?.sleepQuality ? analytics.sleepQuality.toFixed(1) : "6.8"} hr/day</span>
             </div>
           </div>
 

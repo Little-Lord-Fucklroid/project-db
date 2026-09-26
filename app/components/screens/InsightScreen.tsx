@@ -1,10 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export default function InsightScreen({
   onBack,
 }: {
   onBack?: () => void;
 }) {
+  const [analytics, setAnalytics] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/analytics/insight")
+      .then((res) => res.json())
+      .then((data) => setAnalytics(data))
+      .catch(() => setAnalytics({ emotionBars: { sick: 10, angry: 25, sad: 40, calm: 70, happy: 90 }, dominateMood: { label: "Happy", score: 72 } }));
+  }, []);
   return (
     <main
       className="min-h-screen w-full relative overflow-hidden flex flex-col"
@@ -79,24 +89,18 @@ export default function InsightScreen({
         {/* Emotion bar chart */}
         <div className="w-full max-w-[340px] mb-8">
           <div className="flex items-end justify-between gap-2 h-[80px] mb-3">
-            {[
-              { name: "Sick", val: 10 },
-              { name: "Angry", val: 25 },
-              { name: "Sad", val: 40 },
-              { name: "Calm", val: 70 },
-              { name: "Happy", val: 90 },
-            ].map((b) => (
-              <div key={b.name} className="flex-1 flex flex-col items-center gap-1">
+                        {Object.entries(analytics?.emotionBars || { sick: 10, angry: 25, sad: 40, calm: 70, happy: 90 }).map(([name, val]: [string, any]) => (
+              <div key={name} className="flex-1 flex flex-col items-center gap-1">
                 <div
                   className="w-full rounded-t-xl bg-gradient-to-t from-[#c8aee8] to-[#d6bef5] backdrop-blur-sm"
-                  style={{ height: `${b.val}%`, minHeight: 12 }}
+                  style={{ height: `${Number(val) || 0}%`, minHeight: 12 }}
                 />
               </div>
             ))}
           </div>
           <div className="flex justify-between px-0.5">
-            {["Sick", "Angry", "Sad", "Calm", "Happy"].map((label) => (
-              <span key={label} className="text-[10px] font-extrabold text-[#b8a0d0] tracking-wide uppercase text-center w-[20%]">
+            {Object.entries(analytics?.emotionBars || { sick: 10, angry: 25, sad: 40, calm: 70, happy: 90 }).map(([label, val]) => (
+              <span key={label} className="text-[10px] font-extrabold text-[#b8a0d0] tracking-wide uppercase text-center w-[20%] capitalize">
                 {label}
               </span>
             ))}
@@ -114,7 +118,7 @@ export default function InsightScreen({
         <section className="w-full max-w-[340px] rounded-[28px] p-5 shadow-[0_12px_40px_rgba(120,60,180,0.1)] bg-white/35 backdrop-blur-xl border border-white/50 mb-2">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[16px] font-black text-[#3a1e5e] tracking-tight">Dominate Mood</h3>
-            <span className="text-[22px] font-black text-[#2d1b3a] tracking-tight">72 <span className="text-[13px] font-extrabold text-[#8a6fb0]">/ 100</span></span>
+            <span className="text-[22px] font-black text-[#2d1b3a] tracking-tight">{analytics?.dominateMood?.score || 72} <span className="text-[13px] font-extrabold text-[#8a6fb0]">/ 100</span></span>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-md flex-shrink-0">
@@ -125,13 +129,13 @@ export default function InsightScreen({
               />
             </div>
             <div className="flex-1">
-              <h4 className="text-[15px] font-black text-[#2d1b3a] tracking-tight">Happy</h4>
+              <h4 className="text-[15px] font-black text-[#2d1b3a] tracking-tight">{analytics?.dominateMood?.label || "Happy"}</h4>
               <div className="mt-1.5 flex items-center gap-3">
                 <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#a070d0] to-[#8a5fc0] flex items-center justify-center shadow-md">
                   <span className="text-[10px] text-white font-black">💬</span>
                 </span>
                 <div className="flex-1 h-1 rounded-full bg-[#e8d5f5] overflow-hidden">
-                  <div className="w-[72%] h-full rounded-full bg-gradient-to-r from-[#9b7ce0] to-[#6d3ba8]" />
+                  <div className="h-full rounded-full bg-gradient-to-r from-[#9b7ce0] to-[#6d3ba8]" style={{ width: `${analytics?.dominateMood?.score || 72}%` }} />
                 </div>
                 <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#b49ae0] to-[#9a7bc8] flex items-center justify-center shadow-md">
                   <span className="text-[10px] text-white font-black">📊</span>

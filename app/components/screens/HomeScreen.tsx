@@ -52,7 +52,7 @@ export default function HomeScreen({
           <span className="text-xl">🧠</span>
         </div>
         <h2 className="text-[15px] font-black tracking-tight text-[#4a2b6e] leading-none">
-          Mindora
+          Vibe
         </h2>
       </div>
 
@@ -64,7 +64,7 @@ export default function HomeScreen({
           Understood by AI.
         </h1>
         <p className="text-[#7a6095] text-[15px] font-medium mt-4 max-w-[320px] mx-auto leading-relaxed">
-          Talk, reflect, and heal with your personal AI companion.
+          {todayMood ? `Feeling ${todayMood.mood.toLowerCase()}? Talk, reflect, and heal with your personal AI companion.` : "Talk, reflect, and heal with your personal AI companion."}
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export default function HomeScreen({
             border: "1px solid rgba(255,220,160,0.6)",
           }}
         >
-          I Feel love
+          {todayMood ? `I Feel ${todayMood.mood.toLowerCase()}` : "I Feel love"}
         </span>
       </div>
 

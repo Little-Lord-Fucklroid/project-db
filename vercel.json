@@ -1,0 +1,14 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "python -m pip install -r requirements.txt || python3 -m pip install -r requirements.txt || true; npm ci",
+  "functions": {
+    "app/api/tts/route.ts": {
+      "runtime": "nodejs",
+      "maxDuration": 45
+    }
+  },
+  "includeFiles": [
+    "scripts/edge_tts_generate.py",
+    "requirements.txt"
+  ]
+}

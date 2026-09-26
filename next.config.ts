@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingIncludes: {
+    "/api/tts/*": [
+      "scripts/edge_tts_generate.py",
+      "requirements.txt",
+    ],
+  },
 };
 
 export default nextConfig;
